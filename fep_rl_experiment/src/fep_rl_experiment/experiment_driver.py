@@ -76,9 +76,12 @@ class ExperimentDriver:
         done = False
         steps = 0
         obs = self.env.reset()
-        while not self.experiment_driver.robot_ok:
-            rospy.loginfo("Waiting the robot to be ready...")
+        time.sleep(1.0)
+        while not self.robot.fingers_open:
+            rospy.logwarn(f"Fingers are not open: {self.robot.joint_state[-2:].mean()}")
             time.sleep(2.5)
+        while not self.robot_ok:
+            rospy.loginfo("Waiting the robot to be ready...")    
         ongoing_reward = 0.0
         while not done and steps < self.trajectory_length:
             start = time.time()
