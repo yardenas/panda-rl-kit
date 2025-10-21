@@ -63,14 +63,15 @@ class PandaPickCube:
 
     def reset(self) -> Dict[str, Any]:
         self.robot.reset_service_cb(None)
+        time.sleep(0.5)
         while not self.robot.fingers_open:
             rospy.logwarn(f"Fingers are not open: {self.robot.joint_state[-2:].mean()}")
             self.robot.open_gripper()
-            time.sleep(2.5)
+            time.sleep(1.)
         box_pos = self.robot.get_cube_pos()
         while box_pos[2] > 0.05:
             rospy.logwarn(f"Cube is not on the table: {box_pos}")
-            time.sleep(2.5)
+            time.sleep(1.)
             box_pos = self.robot.get_cube_pos()
         self.prev_reward = 0.0
         self.reached_box = 0.0
