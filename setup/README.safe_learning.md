@@ -34,11 +34,11 @@ source .venv-fep/bin/activate
 python -m pip install --upgrade pip
 # Install the same Python packages listed in setup/README.software.md.
 
-# Training stack (uses uv)
+# Training stack (uses uv sync)
 cd external/safe-learning
-uv venv .venv-safe
-source .venv-safe/bin/activate
-uv pip install -e .
+uv python install 3.11.6  # installs the interpreter if it's missing
+uv sync --no-dev
+source .venv/bin/activate
 ```
 
 > **Note:** Install [`uv`](https://github.com/astral-sh/uv) if it is not already available (`curl -LsSf https://astral.sh/uv/install.sh | sh`).
