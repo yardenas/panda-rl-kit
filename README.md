@@ -115,6 +115,8 @@ Experiment metrics are logged under `experiment_sessions/` and reward telemetry 
 
 If you prefer to work natively, follow the detailed instructions in `setup/README.software.md`. They cover ROS Noetic installation, RealSense kernel modules, Python dependencies, catkin workspace creation, and sanity checks for both simulation and real hardware bring-up.
 
+That document also lists the Python packages that mirror the Docker image.
+
 ## Project Layout
 
 - `fep_rl_experiment/launch`: ROS launch files for simulation, real-robot operation, and cube detection.

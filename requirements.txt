@@ -1,4 +1,0 @@
-# The ROS/robot environment uses its own dependency set.
-# Keep the canonical list in requirements/fep_rl.txt so we can
-# install a completely independent environment for safe-learning.
--r requirements/fep_rl.txt
