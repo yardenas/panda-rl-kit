@@ -1,12 +1,12 @@
 version: "3"
-name: "narrate"
+name: "franka-emika-rl"
 services:
-  narrate:
-    image: narrate
+  fep_rl:
+    image: fep_rl
     build:
       context: ..
       dockerfile: docker/Dockerfile
-    container_name: narrate
+    container_name: fep_rl
     volumes:
       - ..:/code
       - /tmp/.X11-unix:/tmp/.X11-unix:rw

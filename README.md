@@ -28,7 +28,7 @@ The Docker environment mirrors the system dependencies described in the manual s
    ```
 3. Launch the container:
    ```bash
-   docker compose -f docker/docker-compose.yaml run --rm narrate bash
+   docker compose -f docker/docker-compose.yaml run --rm fep_rl bash
    ```
 4. Inside the container, the workspace at `/catkin_ws` is already built during the image build. Activate it with:
    ```bash
