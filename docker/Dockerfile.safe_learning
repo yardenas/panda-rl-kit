@@ -25,16 +25,17 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 RUN python3 -m venv /opt/venvs/safe-learning
-ENV PATH=/opt/venvs/safe-learning/bin:$PATH
+ENV VIRTUAL_ENV=/opt/venvs/safe-learning
+ENV PATH=${VIRTUAL_ENV}/bin:/root/.local/bin:$PATH
 
-RUN pip install --upgrade pip wheel setuptools
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 
 WORKDIR /workspace
 
 COPY external/safe-learning /workspace/external/safe-learning
 WORKDIR /workspace/external/safe-learning
 
-RUN if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-RUN if [ -f pyproject.toml ] || [ -f setup.py ]; then pip install -e .; fi
+RUN if [ -f requirements.txt ]; then uv pip install --python ${VIRTUAL_ENV}/bin/python -r requirements.txt; fi
+RUN if [ -f pyproject.toml ] || [ -f setup.py ]; then uv pip install --python ${VIRTUAL_ENV}/bin/python -e .; fi
 
 CMD ["/bin/bash"]

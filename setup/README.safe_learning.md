@@ -31,19 +31,17 @@ If you prefer to work outside Docker, keep the package sets isolated:
 # ROS / robot stack
 python3 -m venv .venv-fep
 source .venv-fep/bin/activate
-pip install \
-  numpy==1.21.6 \
-  onnxruntime>=1.16.0 \
-  pyzmq>=25.1.0 \
-  opencv-python>=4.7.0 \
-  matplotlib>=3.5.0
+python -m pip install --upgrade pip
+# Install the same Python packages listed in setup/README.software.md.
 
-# Training stack
+# Training stack (uses uv)
 cd external/safe-learning
-python3 -m venv .venv-safe
+uv venv .venv-safe
 source .venv-safe/bin/activate
-pip install -r requirements.txt  # or follow the repo-specific instructions
+uv pip install -e .
 ```
+
+> **Note:** Install [`uv`](https://github.com/astral-sh/uv) if it is not already available (`curl -LsSf https://astral.sh/uv/install.sh | sh`).
 
 ## 3. Remote-First Training Workflow
 
