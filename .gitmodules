@@ -1,4 +1,4 @@
 [submodule "external/safe-learning"]
 	path = external/safe-learning
-	url = https://github.com/yardenas/safe-learning.git
+	url = https://github.com/yardenas/safe-learning
 	branch = main
