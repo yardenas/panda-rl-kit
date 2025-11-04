@@ -1,0 +1,29 @@
+version: "3"
+name: "narrate"
+services:
+  narrate:
+    image: narrate
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: narrate
+    volumes:
+      - ..:/code
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /dev:/dev:rw
+    devices:
+      - /dev/dri:/dev/dri
+    environment:
+      - DISPLAY=$DISPLAY
+      - QT_X11_NO_MITSHM=1
+      - XAUTHORITY=/tmp/.docker.xauth
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+    expose:
+      - "20210-20230/udp"
+      - "33300-33400/udp"
+    ports:
+      - "20210-20230:20210-20230/udp"
+      - "33300-33400:33300-33400/udp"
+    extra_hosts:
+      - "host.docker.internal:172.17.0.1"
