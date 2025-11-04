@@ -9,6 +9,7 @@ This guide documents the physical setup that was used to collect data and run th
 - Intel RealSense depth camera (D435/D455 family tested) with USB 3.0 cable and a rigid mount looking at the manipulation workspace.
 - Printed AprilTag or ArUco marker board. The default launch files expect single ArUco markers with IDs `571 581 591 601 611 621` at 42 mm edge length.
 - Cubic grasp target (50 mm edge length) with matte surface finish for reliable pose estimation.
+- Matte black cloth or backdrop to cover the table surface and improve visual contrast for cube detection.
 - Stable workbench that can anchor the Panda base and safely accommodate the camera and marker target.
 - Physical E-stop button within reach of the operator and clear line of sight to the robot.
 
@@ -28,8 +29,9 @@ The launch files ship with a static transform from the Panda base frame (`panda_
    ```bash
    roslaunch fep_rl_experiment bringup_real.launch robot_ip:=<your_robot_ip> sessionId:=calib_test
    ```
-2. Inspect the transform in RViz. If the camera pose differs from the default (~0.9 m above and slightly offset from the base), edit the `args` of the `static_transform_publisher` in `fep_rl_experiment/launch/bringup_real.launch`.
-3. Update the ArUco marker size (`markerSize`) and cube size (`cubeSize`) arguments if you use different targets.
+2. Inspect the transform in RViz. Overlay the RGB image and depth point cloud to confirm they roughly agree—precise hand–eye calibration is not required because the online RL pipeline continuously adapts to small alignment shifts during training, so a visually consistent overlay is sufficient.
+3. If the camera pose differs significantly from the default (~0.9 m above and slightly offset from the base), edit the `args` of the `static_transform_publisher` in `fep_rl_experiment/launch/bringup_real.launch`.
+4. Update the ArUco marker size (`markerSize`) and cube size (`cubeSize`) arguments if you use different targets.
 
 ## Operational Safety Checklist
 
