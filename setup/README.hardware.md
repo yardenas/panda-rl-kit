@@ -30,7 +30,9 @@ The launch files ship with a static transform from the Panda base frame (`panda_
    roslaunch fep_rl_experiment bringup_real.launch robot_ip:=<your_robot_ip> sessionId:=calib_test
    ```
 2. Inspect the transform in RViz. Overlay the RGB image and depth point cloud to confirm they roughly agree—precise hand–eye calibration is not required because the online RL pipeline continuously adapts to small alignment shifts during training, so a visually consistent overlay is sufficient.
-3. If the camera pose differs significantly from the default (~0.9 m above and slightly offset from the base), edit the `args` of the `static_transform_publisher` in `fep_rl_experiment/launch/bringup_real.launch`.
+3. If the camera pose differs significantly from the default (~0.9 m above and slightly offset from the base), update both of the following:
+   - **ROS bring-up:** edit the `args` of the `static_transform_publisher` in `fep_rl_experiment/launch/bringup_real.launch`. The first three numbers are the XYZ translation in metres; the next four numbers are the quaternion (x, y, z, w). Restart the launch file after any change.
+   - **Safe-Learning simulator:** edit the `<camera>` entry in `external/safe-learning/ss2r/benchmark_suites/mujoco_playground/pick_cartesian/assets/xmls/mjx_single_cube_camera.xml`. Set the `pos="x y z"` attribute to match your measured translation and adjust the `euler` angles (in radians) so the simulated camera view matches the real one. Keeping both files in sync ensures that the rendered observations used for policy training align with the real camera viewpoint.
 4. Update the ArUco marker size (`markerSize`) and cube size (`cubeSize`) arguments if you use different targets.
 
 ## Operational Safety Checklist

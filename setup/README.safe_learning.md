@@ -31,7 +31,12 @@ If you prefer to work outside Docker, keep the package sets isolated:
 # ROS / robot stack
 python3 -m venv .venv-fep
 source .venv-fep/bin/activate
-pip install -r requirements/fep_rl.txt
+pip install \
+  numpy==1.21.6 \
+  onnxruntime>=1.16.0 \
+  pyzmq>=25.1.0 \
+  opencv-python>=4.7.0 \
+  matplotlib>=3.5.0
 
 # Training stack
 cd external/safe-learning

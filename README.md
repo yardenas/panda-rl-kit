@@ -70,7 +70,29 @@ To run the trainer on the same machine, launch both services and point `train_br
 docker compose -f docker/docker-compose.yaml run --rm safe_learning bash
 ```
 
-For in-depth guidance—including native virtual environments and pointers to the `safe-learning` and `madrona_mjx` installation docs—see `setup/README.safe_learning.md`.
+### Remote Trainer via Reverse SSH
+
+When the robot and GPU trainer live on different networks you need a reverse SSH tunnel so the remote machine can reach the transition server that runs next to the robot.
+
+1. **Pick tunnel details:** choose an open port on the remote GPU host (default `5555`) and make sure inbound connections to that port are allowed by its firewall.
+2. **Start the tunnel from the robot workstation:**
+   ```bash
+   ./scripts/train_training.bash <gpu_user> <gpu_host> [session_id]
+   ```
+   The helper runs `ssh -R 5555:localhost:5559 <gpu_user>@<gpu_host>` in the background, launches `bringup_real.launch`, and cleans up the tunnel when you press `Ctrl+C`. Override the port by editing the script or by running the raw SSH command yourself.
+3. **Manually launching (optional):** if you prefer to manage the ROS bring-up separately, first create the tunnel:
+   ```bash
+   ssh -R <remote_port>:localhost:5559 <gpu_user>@<gpu_host> -N
+   ```
+   Then, in another terminal on the robot workstation, start `roslaunch fep_rl_experiment bringup_real.launch`.
+4. **Run the trainer on the remote GPU:** point your training job at `tcp://localhost:<remote_port>`; for example:
+   ```bash
+   docker compose -f docker/docker-compose.yaml run --rm safe_learning \
+     python train_brax.py --transition-endpoint tcp://localhost:5555
+   ```
+   Keep the SSH session open while training—closing it tears down the tunnel and the trainer will stop receiving transitions.
+
+For in-depth guidance—including native virtual environments, remote trainer instructions, and pointers to the `safe-learning` and `madrona_mjx` installation docs—see `setup/README.safe_learning.md`.
 
 ## Running Experiments
 

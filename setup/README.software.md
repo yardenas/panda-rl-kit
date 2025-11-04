@@ -77,7 +77,12 @@ Create a virtual environment (recommended) and install the Python dependencies s
 python3 -m venv ~/fep_env
 source ~/fep_env/bin/activate
 python -m pip install --upgrade pip
-pip install -r requirements.txt
+pip install \
+  numpy==1.21.6 \
+  onnxruntime>=1.16.0 \
+  pyzmq>=25.1.0 \
+  opencv-python>=4.7.0 \
+  matplotlib>=3.5.0
 ```
 
 When you launch ROS, ensure the virtual environment is active **before** you source your workspace’s `setup.bash` so that the correct interpreter is used.
