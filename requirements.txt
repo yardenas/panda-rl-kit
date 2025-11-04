@@ -1,5 +1,4 @@
-numpy==1.21.6
-onnxruntime>=1.16.0
-pyzmq>=25.1.0
-opencv-python>=4.7.0
-matplotlib>=3.5.0
+# The ROS/robot environment uses its own dependency set.
+# Keep the canonical list in requirements/fep_rl.txt so we can
+# install a completely independent environment for safe-learning.
+-r requirements/fep_rl.txt

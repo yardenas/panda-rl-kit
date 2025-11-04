@@ -7,6 +7,7 @@ This repository hosts the ROS packages, launch files, and training utilities we 
 - `scripts/train_training.bash`: helper script that creates an SSH reverse tunnel and launches online learning with a custom session identifier.
 - `docker/`: Dockerfile and compose configuration for a fully reproducible runtime environment with ROS Noetic and Intel RealSense support.
 - `setup/`: step-by-step hardware and software guides for preparing a lab workstation without containers.
+- `external/safe-learning`: Git submodule with the Brax/JAX training stack (policy optimisation and safety-critical RL).
 
 ## Before You Start
 
@@ -43,6 +44,33 @@ The Docker environment mirrors the system dependencies described in the manual s
 
 > **Tip:** If you need GPU acceleration inside Docker, ensure the NVIDIA Container Toolkit is installed and that the compose file’s `NVIDIA_*` environment variables match your driver capability.
 > **Ports:** The default compose file maps UDP ranges `20210-20230` and `33300-33400` for streaming and teleoperation utilities. Adjust these if they conflict with services already running on your host.
+
+## Safe-Learning Trainer
+
+The Brax/JAX trainer lives in the `external/safe-learning` submodule. Pull it with:
+
+```bash
+git submodule update --init --recursive
+```
+
+The docker compose file now exposes two services:
+
+- `fep_rl`: robot-side ROS / sampling stack (unchanged).
+- `safe_learning`: CUDA-enabled training environment. It installs dependencies from the submodule so it can evolve independently of ROS packages.
+
+Build both images after checking out the submodule:
+
+```bash
+docker compose -f docker/docker-compose.yaml build
+```
+
+To run the trainer on the same machine, launch both services and point `train_brax.py` at the exposed transition server endpoint (`tcp://host.docker.internal:5559`). When offloading training to a remote GPU machine, use `./scripts/train_training.bash` to open a reverse tunnel (`remote:5555 -> local:5559`) and connect the trainer via `tcp://localhost:5555`. The training service can be started with:
+
+```bash
+docker compose -f docker/docker-compose.yaml run --rm safe_learning bash
+```
+
+For in-depth guidance—including native virtual environments and pointers to the `safe-learning` and `madrona_mjx` installation docs—see `setup/README.safe_learning.md`.
 
 ## Running Experiments
 
