@@ -4,7 +4,7 @@ This repository hosts the ROS packages, launch files, and training utilities we 
 
 ## Repository Highlights
 - `fep_rl_experiment`: ROS package for robot bring-up, cube detection, experiment logging, and the online learning node.
-- `scripts/remote_training.bash`: helper script that creates an SSH reverse tunnel and launches online learning with a custom session identifier.
+- `scripts/remote_training.bash`: helper script that creates an SSH reverse tunnel and launches online learning with a custom session identifier. Run this script on the workstation that has direct network access to the robot controller.
 - `docker/`: Dockerfile and compose configuration for a fully reproducible runtime environment with ROS Noetic and Intel RealSense support.
 - `setup/`: step-by-step hardware and software guides for preparing a lab workstation without containers.
 - `external/safe-learning`: Git submodule with the Brax/JAX training stack (policy optimisation and safety-critical RL).
@@ -64,7 +64,7 @@ Build both images after checking out the submodule:
 docker compose -f docker/docker-compose.yaml build
 ```
 
-To run the trainer on the same machine, launch both services and point `train_brax.py` at the exposed transition server endpoint (`tcp://host.docker.internal:5559`). When offloading training to a remote GPU machine, use `./scripts/remote_training.bash` to open a reverse tunnel (`remote:5555 -> local:5559`) and connect the trainer via `tcp://localhost:5555`. The training service can be started with:
+To run the trainer on the same machine, launch both services and point `train_brax.py` at the exposed transition server endpoint (`tcp://host.docker.internal:5559`). When offloading training to a remote GPU machine, use `./scripts/remote_training.bash` to open a reverse tunnel (`remote:5555 -> local:5559`) and connect the trainer via `tcp://localhost:5555`. Run this helper on the workstation that talks to the robot so the tunnel originates from the host that can reach the transition server. The training service can be started with:
 
 ```bash
 docker compose -f docker/docker-compose.yaml run --rm safe_learning bash
