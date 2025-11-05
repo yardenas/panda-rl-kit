@@ -1,5 +1,0 @@
-numpy==1.21.6
-onnxruntime>=1.16.0
-pyzmq>=25.1.0
-opencv-python>=4.7.0
-matplotlib>=3.5.0

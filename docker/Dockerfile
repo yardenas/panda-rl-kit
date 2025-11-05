@@ -61,10 +61,13 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 
-RUN python3 -m pip install --upgrade pip
-
-COPY requirements.txt /tmp/requirements.txt
-RUN python3 -m pip install -r /tmp/requirements.txt
+RUN python3 -m pip install --upgrade pip && \
+    python3 -m pip install \
+        numpy==1.21.6 \
+        onnxruntime>=1.16.0 \
+        pyzmq>=25.1.0 \
+        opencv-python>=4.7.0 \
+        matplotlib>=3.5.0
 
 # CACHING FOR PIP
 # Note: This makes re-building of images a LOT quicker since we do not need to

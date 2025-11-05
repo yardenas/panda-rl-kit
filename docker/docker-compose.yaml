@@ -22,8 +22,25 @@ services:
     expose:
       - "20210-20230/udp"
       - "33300-33400/udp"
+      - "5559"
     ports:
       - "20210-20230:20210-20230/udp"
       - "33300-33400:33300-33400/udp"
+      - "5559:5559"
     extra_hosts:
       - "host.docker.internal:172.17.0.1"
+  safe_learning:
+    image: safe_learning
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.safe_learning
+    container_name: safe_learning
+    volumes:
+      - ..:/workspace
+    working_dir: /workspace/external/safe-learning
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+    gpus: all
+    tty: true
+    stdin_open: true

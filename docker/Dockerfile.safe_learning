@@ -1,0 +1,64 @@
+# syntax=docker/dockerfile:1.4
+FROM nvidia/cuda:12.1.0-cudnn8-devel-ubuntu22.04
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    clang \
+    curl \
+    git \
+    libx11-dev \
+    libgl1 \
+    libglu1-mesa \
+    libxi-dev \
+    libxi6 \
+    libxrandr-dev \
+    libxrandr2 \
+    libxinerama-dev \
+    libxinerama1 \
+    libxcursor-dev \
+    libxcursor1 \
+    mesa-common-dev \
+    ninja-build \
+    pkg-config \
+    python3 \
+    python3-dev \
+    python3-pip \
+    python3-venv \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG MADRONA_MJX_REPO=https://github.com/shacklettbp/madrona_mjx.git
+ARG MADRONA_LOAD_VULKAN=OFF
+
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH=/root/.local/bin:$PATH
+
+ENV VIRTUAL_ENV=/opt/venvs/safe-learning
+RUN uv venv ${VIRTUAL_ENV} --python 3.11.6
+ENV PATH=${VIRTUAL_ENV}/bin:/root/.local/bin:$PATH
+ENV UV_PROJECT_ENVIRONMENT=${VIRTUAL_ENV}
+
+WORKDIR /opt
+
+RUN uv pip install "cmake>=3.31.0"
+
+RUN git clone ${MADRONA_MJX_REPO} madrona_mjx \
+    && cd madrona_mjx \
+    && git submodule update --init --recursive \
+    && mkdir -p build \
+    && cd build \
+    && cmake -DLOAD_VULKAN=${MADRONA_LOAD_VULKAN} .. \
+    && make -j"$(nproc)" \
+    && cd /opt/madrona_mjx \
+    && uv pip install -e .
+
+WORKDIR /workspace
+
+COPY external/safe-learning /workspace/external/safe-learning
+WORKDIR /workspace/external/safe-learning
+
+RUN uv sync --no-dev
+
+CMD ["/bin/bash"]
