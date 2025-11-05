@@ -55,7 +55,7 @@ Policy optimisation is typically executed on a GPU server while the robot-side t
 
 2. To make the ZMQ endpoint reachable on a remote trainer, start the reverse SSH tunnel helper from the repository root:
    ```bash
-   ./scripts/train_training.bash <gpu_user> <gpu_host> [session_id]
+   ./scripts/remote_training.bash <gpu_user> <gpu_host> [session_id]
    ```
    This command forwards the lab machine’s port `5559` to `localhost:5555` on the remote machine and launches the bring-up launch file with the given session id.
 

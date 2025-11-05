@@ -4,7 +4,7 @@ This repository hosts the ROS packages, launch files, and training utilities we 
 
 ## Repository Highlights
 - `fep_rl_experiment`: ROS package for robot bring-up, cube detection, experiment logging, and the online learning node.
-- `scripts/train_training.bash`: helper script that creates an SSH reverse tunnel and launches online learning with a custom session identifier.
+- `scripts/remote_training.bash`: helper script that creates an SSH reverse tunnel and launches online learning with a custom session identifier.
 - `docker/`: Dockerfile and compose configuration for a fully reproducible runtime environment with ROS Noetic and Intel RealSense support.
 - `setup/`: step-by-step hardware and software guides for preparing a lab workstation without containers.
 - `external/safe-learning`: Git submodule with the Brax/JAX training stack (policy optimisation and safety-critical RL).
@@ -64,7 +64,7 @@ Build both images after checking out the submodule:
 docker compose -f docker/docker-compose.yaml build
 ```
 
-To run the trainer on the same machine, launch both services and point `train_brax.py` at the exposed transition server endpoint (`tcp://host.docker.internal:5559`). When offloading training to a remote GPU machine, use `./scripts/train_training.bash` to open a reverse tunnel (`remote:5555 -> local:5559`) and connect the trainer via `tcp://localhost:5555`. The training service can be started with:
+To run the trainer on the same machine, launch both services and point `train_brax.py` at the exposed transition server endpoint (`tcp://host.docker.internal:5559`). When offloading training to a remote GPU machine, use `./scripts/remote_training.bash` to open a reverse tunnel (`remote:5555 -> local:5559`) and connect the trainer via `tcp://localhost:5555`. The training service can be started with:
 
 ```bash
 docker compose -f docker/docker-compose.yaml run --rm safe_learning bash
@@ -77,7 +77,7 @@ When the robot and GPU trainer live on different networks you need a reverse SSH
 1. **Pick tunnel details:** choose an open port on the remote GPU host (default `5555`) and make sure inbound connections to that port are allowed by its firewall.
 2. **Start the tunnel from the robot workstation:**
    ```bash
-   ./scripts/train_training.bash <gpu_user> <gpu_host> [session_id]
+   ./scripts/remote_training.bash <gpu_user> <gpu_host> [session_id]
    ```
    The helper runs `ssh -R 5555:localhost:5559 <gpu_user>@<gpu_host>` in the background, launches `bringup_real.launch`, and cleans up the tunnel when you press `Ctrl+C`. Override the port by editing the script or by running the raw SSH command yourself.
 3. **Manually launching (optional):** if you prefer to manage the ROS bring-up separately, first create the tunnel:
@@ -107,7 +107,7 @@ With your workspace sourced (`source devel/setup.bash`), you can start the main 
     markerSize:=0.042 \
     cubeSize:=0.05
   ```
-- **Training helper script:** `./scripts/train_training.bash <username> <host> [session_id]`
+- **Training helper script:** `./scripts/remote_training.bash <username> <host> [session_id]`
 
 Experiment metrics are logged under `experiment_sessions/` and reward telemetry is published on `/instant_reward` and `/episode_reward`.
 

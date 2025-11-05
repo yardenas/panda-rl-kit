@@ -128,7 +128,7 @@ Add the source command to `~/.bashrc` if you intend to work with this workspace 
 
 3. **Training Session Proxy (optional):**
    ```bash
-   ./scripts/train_training.bash <username> <remote-host> session_1
+   ./scripts/remote_training.bash <username> <remote-host> session_1
    ```
    This opens an SSH reverse tunnel and launches the online learning node.
 
