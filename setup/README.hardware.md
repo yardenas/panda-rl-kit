@@ -13,7 +13,7 @@ This guide documents the physical setup that was used to collect data and run th
 - Stable workbench that can anchor the Panda base and safely accommodate the camera and marker target.
 - Physical E-stop button within reach of the operator and clear line of sight to the robot.
 
-Note: The RealSense D435 has not been validated in this setup; if you choose to experiment with it, set the Safe-Learning pretraining camera `fovy` to `42` degrees in `external/safe-learning/ss2r/benchmark_suites/mujoco_playground/pick_cartesian/assets/xmls/mjx_single_cube_camera.xml` so the simulated optics match the hardware.
+Note: The RealSense D435 has not been validated in this setup. If you choose to experiment with it, set the Safe-Learning pretraining camera `fovy` to `42` degrees in `external/safe-learning/ss2r/benchmark_suites/mujoco_playground/pick_cartesian/assets/xmls/mjx_single_cube_camera.xml` so the simulated optics match the hardware. Keep the rest of the camera pose aligned with your calibration.
 
 ## Installation and Wiring
 
