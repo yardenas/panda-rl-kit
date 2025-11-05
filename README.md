@@ -103,7 +103,7 @@ When the robot and GPU trainer live on different networks you need a reverse SSH
    ```bash
    docker compose -f docker/docker-compose.yaml run --rm safe_learning \
      python train_brax.py --transition-endpoint tcp://localhost:5555
-```
+   ```
 
 Keep the SSH session open while training—closing it tears down the tunnel and the trainer will stop receiving transitions.
 
