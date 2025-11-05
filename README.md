@@ -116,7 +116,7 @@ For in-depth guidance—including native virtual environments, remote trainer in
    python train_brax.py +experiment=franka_sim_to_real
    ```
    The job logs to Weights & Biases; when it finishes, open the run in the W&B UI and copy the Run ID (the short hash shown under the run name, or the final path element of the run URL).
-2. **Record the replay buffer ID:** the `franka_sim_to_real` job uploads its replay buffer to W&B.
+2. **Record the W&B run id:** the `franka_sim_to_real` job uploads its replay buffer to W&B.
    You'll reuse this identifier when launching online training.
 
 ## Running Experiments
