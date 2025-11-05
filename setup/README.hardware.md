@@ -6,12 +6,14 @@ This guide documents the physical setup that was used to collect data and run th
 
 - Franka Emika Panda 7-DoF arm with a valid FCI (Franka Control Interface) license and control cabinet.
 - External control workstation (tested with Ubuntu 20.04) with at least 4 CPU cores, 16 GB RAM, and a dedicated NVIDIA GPU if you plan to train policies locally.
-- Intel RealSense depth camera (D435/D455 family tested) with USB 3.0 cable and a rigid mount looking at the manipulation workspace.
+- Intel RealSense D455 depth camera (this is the production setup) with USB 3.0 cable and a rigid mount looking at the manipulation workspace.
 - Printed AprilTag or ArUco marker board. The default launch files expect single ArUco markers with IDs `571 581 591 601 611 621` at 42 mm edge length.
 - Cubic grasp target (50 mm edge length) with matte surface finish for reliable pose estimation.
 - Matte black cloth or backdrop to cover the table surface and improve visual contrast for cube detection.
 - Stable workbench that can anchor the Panda base and safely accommodate the camera and marker target.
 - Physical E-stop button within reach of the operator and clear line of sight to the robot.
+
+Note: The RealSense D435 has not been validated in this setup; if you choose to experiment with it, set the Safe-Learning pretraining camera `fovy` to `42` degrees in `external/safe-learning/ss2r/benchmark_suites/mujoco_playground/pick_cartesian/assets/xmls/mjx_single_cube_camera.xml` so the simulated optics match the hardware.
 
 ## Installation and Wiring
 
