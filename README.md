@@ -49,15 +49,8 @@ The Docker environment mirrors the system dependencies described in the manual s
    ```bash
    source /catkin_ws/devel/setup.bash
    ```
-   For development against the mounted repository at `/code`, rebuild as needed from `/catkin_ws` (the workspace links to `/code/fep_rl_experiment`):
-   ```bash
-   cd /catkin_ws
-   catkin build
-   ```
-6. Bring up the simulation or hardware launch files as described in the next section. The repository is mounted at `/code`, so edits persist back to the host.
 
-> **Tip:** If you need GPU acceleration inside Docker, ensure the NVIDIA Container Toolkit is installed and that the compose file’s `NVIDIA_*` environment variables match your driver capability.
-> **Ports:** The default compose file maps UDP ranges `20210-20230` and `33300-33400` for streaming and teleoperation utilities. Adjust these if they conflict with services already running on your host.
+> **Ports:** The default compose file maps UDP ranges `20210-20230` and `33300-33400` for robot comms. Adjust these if they conflict with services already running on your host.
 
 ## Safe-Learning Trainer
 
