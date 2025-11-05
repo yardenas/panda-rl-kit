@@ -93,10 +93,20 @@ When the robot and GPU trainer live on different networks you need a reverse SSH
    ```bash
    docker compose -f docker/docker-compose.yaml run --rm safe_learning \
      python train_brax.py --transition-endpoint tcp://localhost:5555
-   ```
-   Keep the SSH session open while training—closing it tears down the tunnel and the trainer will stop receiving transitions.
+```
+  Keep the SSH session open while training—closing it tears down the tunnel and the trainer will stop receiving transitions.
 
 For in-depth guidance—including native virtual environments, remote trainer instructions, and pointers to the `safe-learning` and `madrona_mjx` installation docs—see `setup/README.safe_learning.md`.
+
+### Pretraining a Prior Policy
+
+1. **Train the prior in simulation:** on the training machine run:
+   ```bash
+   python train_brax.py +experiment=franka_sim_to_real
+   ```
+   The job logs to Weights & Biases; when it finishes, open the run in the W&B UI and copy the Run ID (the short hash shown under the run name, or the final path element of the run URL).
+2. **Record the replay buffer ID:** the `franka_sim_to_real` job uploads its replay buffer to W&B.
+   You'll reuse this identifier when launching online training.
 
 ## Running Experiments
 
@@ -112,6 +122,13 @@ With your workspace sourced (`source devel/setup.bash`), you can start the main 
     cubeSize:=0.05
   ```
 - **Training helper script:** `./scripts/remote_training.bash <username> <host> [session_id]`
+- **Online training with the pretrained prior:** run from the machine that talks to the transition server, using the W&B identifiers collected during pretraining:
+  ```bash
+  python train_brax.py +experiment=franka_online \
+    training.wandb_id=<wandb_run_id> \
+    agent.replay_buffer.wandb_ids='[<wandb_run_id>]'
+  ```
+  Replace `<wandb_run_id>` with the Run ID from the simulation job (for example `username/project/abc123`). The online run resumes logging to the existing W&B project while seeding the policy and replay buffer with the simulated prior.
 
 Experiment metrics are logged under `experiment_sessions/` and reward telemetry is published on `/instant_reward` and `/episode_reward`.
 
