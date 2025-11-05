@@ -15,6 +15,16 @@ This repository hosts the ROS packages, launch files, and training utilities we 
 2. Prepare your Ubuntu 20.04 workstation following `setup/README.software.md` **or** use the Docker workflow below.
 3. Verify that your Franka Emika Panda has an active FCI license and that you can ping the robot control cabinet from your workstation.
 
+## GPU Requirements
+
+The CUDA-enabled training stack (`safe_learning`) has been validated with the following NVIDIA components. Make sure your GPU workstation matches these versions (or newer) before launching the trainer:
+
+- NVIDIA driver `555.42.06`
+- CUDA runtime `12.5`
+- cuDNN `9.10.2` for CUDA 12
+
+You can confirm the driver and CUDA versions with `nvidia-smi`; cuDNN is reported by the installed `nvidia-cudnn-cu12` package inside the training environment.
+
 ## Docker Workflow
 
 The Docker environment mirrors the system dependencies described in the manual setup guides while isolating ROS and Python packages.
