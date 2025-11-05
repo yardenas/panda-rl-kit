@@ -19,19 +19,23 @@ This repository hosts the ROS packages, launch files, and training utilities we 
 
 The Docker environment mirrors the system dependencies described in the manual setup guides while isolating ROS and Python packages.
 
-1. Build the image (run from the repository root):
+1. Make sure the `safe-learning` submodule is available (only needed the first time or after cleaning the checkout):
+   ```bash
+   git submodule update --init --recursive
+   ```
+2. Build the image (run from the repository root):
    ```bash
    docker compose -f docker/docker-compose.yaml build
    ```
-2. Allow container access to the X server if you plan to run RViz from the container (Linux host):
+3. Allow container access to the X server if you plan to run RViz from the container (Linux host):
    ```bash
    xhost +local:docker
    ```
-3. Launch the container:
+4. Launch the container:
    ```bash
    docker compose -f docker/docker-compose.yaml run --rm fep_rl bash
    ```
-4. Inside the container, the workspace at `/catkin_ws` is already built during the image build. Activate it with:
+5. Inside the container, the workspace at `/catkin_ws` is already built during the image build. Activate it with:
    ```bash
    source /catkin_ws/devel/setup.bash
    ```
@@ -40,7 +44,7 @@ The Docker environment mirrors the system dependencies described in the manual s
    cd /catkin_ws
    catkin build
    ```
-5. Bring up the simulation or hardware launch files as described in the next section. The repository is mounted at `/code`, so edits persist back to the host.
+6. Bring up the simulation or hardware launch files as described in the next section. The repository is mounted at `/code`, so edits persist back to the host.
 
 > **Tip:** If you need GPU acceleration inside Docker, ensure the NVIDIA Container Toolkit is installed and that the compose file’s `NVIDIA_*` environment variables match your driver capability.
 > **Ports:** The default compose file maps UDP ranges `20210-20230` and `33300-33400` for streaming and teleoperation utilities. Adjust these if they conflict with services already running on your host.
