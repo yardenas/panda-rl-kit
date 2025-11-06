@@ -2,7 +2,7 @@
 
 This guide documents the physical setup that was used to collect data and run the reinforcement-learning experiments showcased in this repository. Following these steps will get your Franka Emika Panda workspace ready for the software stack described in `setup/README.software.md`.
 
-![Panda hardware overview](../assets/panda-description.png)
+<img src="../assets/panda-description.png" alt="Panda hardware overview" width="256" />
 
 ## Bill of Materials
 
