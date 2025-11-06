@@ -2,7 +2,6 @@
 
 This guide documents the physical setup that was used to collect data and run the reinforcement-learning experiments showcased in this repository. Following these steps will get your Franka Emika Panda workspace ready for the software stack described in `setup/README.software.md`.
 
-<img src="../assets/panda-description.png" alt="Panda hardware overview" width="256" />
 
 ## Bill of Materials
 
@@ -16,6 +15,8 @@ This guide documents the physical setup that was used to collect data and run th
 - Physical E-stop button within reach of the operator and clear line of sight to the robot.
 
 Note: The RealSense D435 has not been validated in this setup. If you choose to experiment with it, set the Safe-Learning pretraining camera `fovy` to `42` degrees in `external/safe-learning/ss2r/benchmark_suites/mujoco_playground/pick_cartesian/assets/xmls/mjx_single_cube_camera.xml` so the simulated optics match the hardware. Keep the rest of the camera pose aligned with your calibration.
+
+<img src="../assets/panda-description.png" alt="Panda hardware overview" width="256" />
 
 ## Installation and Wiring
 
