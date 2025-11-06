@@ -2,6 +2,8 @@
 
 This guide documents the physical setup that was used to collect data and run the reinforcement-learning experiments showcased in this repository. Following these steps will get your Franka Emika Panda workspace ready for the software stack described in `setup/README.software.md`.
 
+![Panda hardware overview](../assets/panda-description.png)
+
 ## Bill of Materials
 
 - Franka Emika Panda 7-DoF arm with a valid FCI (Franka Control Interface) license and control cabinet.
