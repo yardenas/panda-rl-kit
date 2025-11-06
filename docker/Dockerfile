@@ -41,8 +41,6 @@ RUN apt-get update && apt-get install -y \
     python3-rosdep\
     ros-noetic-libfranka ros-noetic-franka-ros\
     ros-noetic-realsense2-camera\
-    ros-noetic-moveit\
-    ros-noetic-graph-msgs \
     apt-transport-https\
     ccache\
     && rm -rf /var/lib/apt/lists/*
@@ -93,7 +91,6 @@ RUN apt-get install -y \
     psutils \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install pin --force-reinstall
 
 COPY . /code
 
