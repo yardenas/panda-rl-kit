@@ -1,4 +1,6 @@
-# Franka Emika Panda Online RL
+![Franka RL setup](assets/panda.png)
+
+# Online Reinforcement Learning on Franka Emika Panda
 
 This repository hosts the ROS packages, launch files, and training utilities we use to run online reinforcement-learning experiments on a real Franka Emika Panda manipulator. The goal is to make it straightforward to reproduce the hardware setup, bring up the robot, and iterate on policies either directly on hardware or in simulation.
 
