@@ -51,7 +51,7 @@ The Docker environment mirrors the system dependencies described in the manual s
    ```bash
    source /catkin_ws/devel/setup.bash
    ```
-
+> [!TIP]
 > **Ports:** The default compose file maps UDP ranges `20210-20230` and `33300-33400` for robot comms. Adjust these if they conflict with services already running on your host.
 
 ## Safe-Learning Trainer
@@ -79,7 +79,8 @@ To run the trainer on the same machine, launch both services and point `train_br
 docker compose -f docker/docker-compose.yaml run --rm safe_learning bash
 ```
 
-### Remote Trainer via Reverse SSH
+<details>
+<summary><strong>Remote Trainer via Reverse SSH</strong></summary>
 
 When the robot and GPU trainer live on different networks you need a reverse SSH tunnel so the remote machine can reach the transition server that runs next to the robot.
 
@@ -101,6 +102,8 @@ When the robot and GPU trainer live on different networks you need a reverse SSH
    ```
 
 Keep the SSH session open while training—closing it tears down the tunnel and the trainer will stop receiving transitions.
+
+</details>
 
 For in-depth guidance—including native virtual environments, remote trainer instructions, and pointers to the `safe-learning` and `madrona_mjx` installation docs—see `setup/README.safe_learning.md`.
 
