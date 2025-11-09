@@ -101,11 +101,11 @@ When the robot and GPU trainer live on different networks you need a reverse SSH
      python train_brax.py --transition-endpoint tcp://localhost:5555
    ```
 
-Keep the SSH session open while training—closing it tears down the tunnel and the trainer will stop receiving transitions.
+Keep the SSH session open while training.
 
 </details>
 
-For in-depth guidance—including native virtual environments, remote trainer instructions, and pointers to the `safe-learning` and `madrona_mjx` installation docs—see `setup/README.safe_learning.md`.
+For in-depth guidance, see `setup/README.safe_learning.md`.
 
 ### Pretraining a Prior Policy
 
