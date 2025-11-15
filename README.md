@@ -155,6 +155,19 @@ That document also lists the Python packages that mirror the Docker image.
 - `setup/`: Documentation for hardware and software preparation.
 - `docker/`: Container recipes for reproducible builds.
 
+## Citing
+Consider referring to this work in your publication by citing:
+```bibtex
+@software{pandarlkit2025github,
+  author = {Yarden As and Chenhao Li},
+  title = {Real-world Online Learning via the Panda Reinforcement Learning Kit},
+  url = {https://github.com/yardenas/panda-rl-kit},
+  version = {0.0.1},
+  year = {2025},
+}
+```
+
+
 ## License
 
 This project is released under the MIT License; see `LICENSE` for details.
