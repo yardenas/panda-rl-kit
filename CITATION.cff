@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Online Reinforcement Learning on Franka Emika Panda"
+version: 0.1.0
+date-released: 2025-11-07
+license: Apache-2.0
+
+authors:
+  - given-names: Yarden
+    family-names: As
+    affiliation: ETH Zurich
+  - given-names: Chenhao
+    family-names: Li
+    affiliation: ETH Zurich
+
+repository-code: https://github.com/yardenas/panda-rl-kit
+url: https://github.com/yardenas/panda-rl-kit
