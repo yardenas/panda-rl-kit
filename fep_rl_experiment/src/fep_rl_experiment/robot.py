@@ -1,6 +1,16 @@
+"""ROS1 interface for Franka Emika Panda robot control.
+
+This module provides the Robot class which handles all ROS communication with
+the Franka Panda manipulator and its peripherals (gripper, camera, sensors).
+It manages publishers, subscribers, services, and TF2 transforms for the robot.
+"""
+
+from typing import Optional, Tuple
+from collections import deque
+
 import rospy
 import numpy as np
-from collections import deque
+import numpy.typing as npt
 import cv2
 import time
 from franka_gripper.msg import HomingAction, HomingGoal, StopActionGoal, MoveActionGoal
@@ -8,12 +18,47 @@ from control_msgs.msg import GripperCommandActionGoal
 from sensor_msgs.msg import Image, JointState
 from geometry_msgs.msg import PoseStamped
 from cv_bridge import CvBridge
-from std_srvs.srv import Empty, SetBool
+from std_srvs.srv import Empty, SetBool, SetBoolResponse
 import tf2_ros
 
 
 class Robot:
-    def __init__(self, init_node=False):
+    """ROS1 interface for Franka Emika Panda robot.
+
+    This class encapsulates all ROS communication with the Franka Panda robot,
+    including cartesian impedance control, gripper control, camera input,
+    joint states, and ArUco-based cube tracking via TF2.
+
+    The robot operates in a constrained workspace with safety checks for
+    position bounds and end-effector velocity.
+
+    Attributes:
+        current_tip_pos: Current end-effector position [x, y, z] in meters.
+        current_tip_quat: Current end-effector orientation [x, y, z, w] quaternion.
+        joint_state: Current joint positions (7 arm joints + 2 gripper fingers).
+        latest_image: Most recent preprocessed camera image (64x64 grayscale, normalized).
+        last_image_time: Timestamp of latest camera image.
+        last_tip_pos_time: Timestamp of latest end-effector pose update.
+        last_joint_state_time: Timestamp of latest joint state update.
+        last_cube_time: Timestamp of latest cube TF transform lookup.
+        goal_tip_quat: Target orientation quaternion for end-effector.
+        start_pos: Home position [x, y, z] for reset operations.
+        ee_velocity_estimator: Linear velocity estimator for safety monitoring.
+        tf_buffer: TF2 buffer for transform lookups.
+        listener: TF2 transform listener.
+        bridge: OpenCV-ROS bridge for image conversion.
+    """
+
+    def __init__(self, init_node: bool = False) -> None:
+        """Initialize the Robot interface.
+
+        Sets up all ROS publishers, subscribers, services, and TF2 listeners
+        for communication with the Franka Panda robot and peripherals.
+
+        Args:
+            init_node: If True, initializes a new ROS node. Set to False if
+                the node is already initialized elsewhere.
+        """
         if init_node:
             rospy.init_node("franka_emika_robot_interface")
         self._desired_ee_pose_pub = rospy.Publisher(
@@ -72,7 +117,15 @@ class Robot:
         self.tf_buffer = tf2_ros.Buffer()
         self.listener = tf2_ros.TransformListener(self.tf_buffer)
 
-    def image_callback(self, msg: Image):
+    def image_callback(self, msg: Image) -> None:
+        """Process incoming camera images.
+
+        Converts ROS Image messages to OpenCV format, preprocesses to 64x64
+        grayscale normalized format, and publishes the processed image.
+
+        Args:
+            msg: ROS Image message from the RealSense camera.
+        """
         try:
             bgr_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding="bgr8")
             grayscale = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2GRAY)
@@ -87,7 +140,15 @@ class Robot:
         except Exception as e:
             rospy.logerr(f"Error converting image: {e}")
 
-    def ee_pose_callback(self, msg: PoseStamped):
+    def ee_pose_callback(self, msg: PoseStamped) -> None:
+        """Update end-effector pose from measured pose topic.
+
+        Extracts position and orientation, updates velocity estimator, and
+        stores timestamp.
+
+        Args:
+            msg: PoseStamped message with current end-effector pose.
+        """
         pos = msg.pose.position
         self.current_tip_pos = np.array([pos.x, pos.y, pos.z])
         # Update internal orientation too if needed
@@ -98,17 +159,40 @@ class Robot:
         )
         self.last_tip_pos_time = msg.header.stamp
 
-    def joint_state_callback(self, msg: JointState):
+    def joint_state_callback(self, msg: JointState) -> None:
+        """Update joint state from JointState topic.
+
+        Args:
+            msg: JointState message with current joint positions.
+        """
         self.joint_state = np.array(msg.position)
         self.last_joint_state_time = msg.header.stamp
 
-    def get_camera_image(self) -> np.ndarray:
+    def get_camera_image(self) -> npt.NDArray[np.float32]:
+        """Get the latest preprocessed camera image.
+
+        Returns:
+            64x64 grayscale image normalized to [0, 1], shape (64, 64, 1).
+        """
         return self.latest_image
 
-    def get_joint_state(self):
+    def get_joint_state(self) -> npt.NDArray[np.float64]:
+        """Get current joint positions.
+
+        Returns:
+            Array of 9 joint positions: 7 arm joints + 2 gripper fingers.
+        """
         return self.joint_state
 
-    def get_cube_pos(self, frame="panda_link0") -> np.ndarray:
+    def get_cube_pos(self, frame: str = "panda_link0") -> Optional[npt.NDArray[np.float64]]:
+        """Get cube position from ArUco marker via TF2 lookup.
+
+        Args:
+            frame: Target reference frame for the transform (default: panda_link0).
+
+        Returns:
+            3D position [x, y, z] of the cube, or None if transform fails.
+        """
         try:
             transformed_pose = self.tf_buffer.lookup_transform(
                 frame, "aruco_cube_frame", rospy.Time(0)
@@ -124,7 +208,15 @@ class Robot:
             rospy.logerr(f"Transform error in get_cube_pos: {e}")
             return None
 
-    def get_cube_quat(self, frame="panda_link0") -> np.ndarray:
+    def get_cube_quat(self, frame: str = "panda_link0") -> Optional[npt.NDArray[np.float64]]:
+        """Get cube orientation from ArUco marker via TF2 lookup.
+
+        Args:
+            frame: Target reference frame for the transform (default: panda_link0).
+
+        Returns:
+            Quaternion [x, y, z, w] of the cube orientation, or None if transform fails.
+        """
         try:
             transformed_pose = self.tf_buffer.lookup_transform(
                 frame, "aruco_cube_frame", rospy.Time(0)
@@ -139,12 +231,29 @@ class Robot:
             rospy.logerr(f"Transform error in get_cube_quat: {e}")
             return None
 
-    def start_service_cb(self, req):
+    def start_service_cb(self, req: SetBool) -> Tuple[bool, str]:
+        """Service callback to start/stop the controller.
+
+        Args:
+            req: SetBool request with data field (True to start, False to stop).
+
+        Returns:
+            Tuple of (success, message).
+        """
         self._running = req.data
         return True, "Started controller."
 
-    def reset_service_cb(self, req):
-        """Resets the controller."""
+    def reset_service_cb(self, req: Empty) -> list:
+        """Service callback to reset the robot to home position.
+
+        Opens gripper and commands end-effector to start_pos with goal orientation.
+
+        Args:
+            req: Empty service request (unused).
+
+        Returns:
+            Empty list (required by ROS1 service protocol).
+        """
         rospy.loginfo("Resetting robot...")
         self.open_gripper()
         target_pose = PoseStamped()
@@ -162,11 +271,23 @@ class Robot:
         self._running = False
         return []
 
-    def act(self, action: np.ndarray) -> np.ndarray:
-        """
-        action: np.array of shape (4,) -> [dx, dy, dz, gripper]
-        dx, dy, dz in range [-1, 1], scaled by action_scale
-        gripper: <0 means close, >=0 means open
+    def act(self, action: npt.NDArray[np.float32]) -> Optional[npt.NDArray[np.float64]]:
+        """Execute a cartesian velocity action and gripper command.
+
+        Applies a scaled delta to the end-effector position (Y-Z plane only,
+        X is fixed to start_pos[0]) and commands gripper to open or close.
+
+        Args:
+            action: Action array [dx, dy, dz, gripper]. dx, dy, dz are velocity
+                commands in [-1, 1] (scaled by action_scale=0.005). Gripper < 0
+                means close, >= 0 means open.
+
+        Returns:
+            New target tip position [x, y, z], or None if robot not ready.
+
+        Note:
+            X-axis is fixed to prevent forward/backward movement. Only Y-Z motion
+            is executed. Workspace bounds are enforced via clipping.
         """
         if not self.ok:
             rospy.logwarn("Not ready yet. Cannot execute action.")
@@ -215,10 +336,16 @@ class Robot:
             self.gripper_command_pub.publish(goal)
         return new_tip_pos
 
-    def get_end_effector_pos(self) -> np.ndarray:
+    def get_end_effector_pos(self) -> npt.NDArray[np.float64]:
+        """Get current end-effector position.
+
+        Returns:
+            3D position [x, y, z] of the end-effector.
+        """
         return self.current_tip_pos
 
-    def open_gripper(self):
+    def open_gripper(self) -> None:
+        """Command gripper to fully open (0.08m width)."""
         if not self.ok:
             rospy.logwarn("Not ready yet. Cannot open gripper.")
             return
@@ -229,14 +356,25 @@ class Robot:
         self.move_action_pub.publish(move)
 
     @property
-    def fingers_open(self):
+    def fingers_open(self) -> bool:
+        """Check if gripper fingers are in open position.
+
+        Returns:
+            True if gripper width >= 2.5cm, False otherwise.
+        """
         if self.joint_state is None:
             return False
         fingers = self.joint_state[-2:].mean()
         return fingers >= 0.025
 
     @property
-    def ok(self):
+    def ok(self) -> bool:
+        """Check if all robot sensors and state are available.
+
+        Returns:
+            True if all required data (pose, image, cube position, joints) is
+            available, False otherwise.
+        """
         ready = True
         if self.current_tip_pos is None:
             rospy.logwarn("current_tip_pos is None")
@@ -253,7 +391,13 @@ class Robot:
         return ready
 
     @property
-    def safe(self):
+    def safe(self) -> bool:
+        """Check if robot is operating safely within bounds and velocity limits.
+
+        Returns:
+            True if end-effector is within 0.3m of start_pos and velocity is
+            below 0.5 m/s in all axes, False otherwise.
+        """
         pos = self.get_end_effector_pos()
         out_of_bounds = np.any(np.abs(pos - self.start_pos) > 0.3)
         if out_of_bounds:
@@ -268,16 +412,46 @@ class Robot:
 
 
 class LinearVelocityEstimator:
-    def __init__(self, window_size=10):
+    """Estimates linear velocity from position measurements using least squares.
+
+    Uses a sliding window of position measurements with timestamps to compute
+    velocity via linear regression. Useful for safety monitoring.
+
+    Attributes:
+        window_size: Number of measurements to retain in the sliding window.
+        positions: Deque of 3D position measurements.
+        timestamps: Deque of corresponding timestamps in seconds.
+    """
+
+    def __init__(self, window_size: int = 10) -> None:
+        """Initialize velocity estimator.
+
+        Args:
+            window_size: Maximum number of measurements to keep (default: 10).
+        """
         self.window_size = window_size
         self.positions = deque(maxlen=window_size)  # List of 3D position vectors
         self.timestamps = deque(maxlen=window_size)  # Corresponding timestamps
 
-    def add_measurement(self, position, timestamp):
+    def add_measurement(self, position: npt.NDArray[np.float64], timestamp: rospy.Time) -> None:
+        """Add a new position measurement to the sliding window.
+
+        Args:
+            position: 3D position vector [x, y, z].
+            timestamp: ROS timestamp of the measurement.
+        """
         self.positions.append(np.array(position))
         self.timestamps.append(float(timestamp.to_sec()))
 
-    def estimate_velocity(self):
+    def estimate_velocity(self) -> Optional[npt.NDArray[np.float64]]:
+        """Compute velocity estimate via least squares linear regression.
+
+        Fits a linear model p(t) = v*t + b to the position measurements and
+        returns the slope v as the velocity estimate.
+
+        Returns:
+            Estimated velocity [vx, vy, vz] in m/s, or None if insufficient data.
+        """
         if len(self.positions) < 2 or np.array(self.timestamps).std() < 1e-6:
             return None  # Not enough data yet
         t = np.array(self.timestamps)
@@ -290,7 +464,18 @@ class LinearVelocityEstimator:
         return v_est.flatten()  # Shape: (3,)
 
 
-def _crop_and_resize(grayscale):
+def _crop_and_resize(grayscale: npt.NDArray[np.uint8]) -> npt.NDArray[np.uint8]:
+    """Crop image to square and resize to 64x64.
+
+    Crops from the center to make the image square (using height as the target
+    dimension), then resizes to 64x64 using bilinear interpolation.
+
+    Args:
+        grayscale: Input grayscale image.
+
+    Returns:
+        64x64 grayscale image.
+    """
     height, width = grayscale.shape
     # Determine side crop to make the image square
     new_width = height  # because height is smaller dimension
@@ -301,7 +486,17 @@ def _crop_and_resize(grayscale):
     return cropped
 
 
-def _preprocess_image(grayscale):
+def _preprocess_image(grayscale: npt.NDArray[np.uint8]) -> npt.NDArray[np.float32]:
+    """Preprocess camera image to 64x64 normalized grayscale.
+
+    Crops, resizes, and normalizes the image to [0, 1] float32 format.
+
+    Args:
+        grayscale: Input grayscale image (uint8).
+
+    Returns:
+        64x64 grayscale image normalized to [0, 1] as float32.
+    """
     grayscale = _crop_and_resize(grayscale)
     # Normalize to [0, 1] and convert to float32
     normalized = grayscale.astype(np.float32) / 255.0

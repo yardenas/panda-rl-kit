@@ -1,10 +1,34 @@
+"""Real-time reward visualization for RL experiments.
+
+This module provides a RewardPlotter class that creates interactive
+matplotlib plots for monitoring training progress.
+"""
+
+from typing import Dict, List, Any
 import matplotlib.pyplot as plt
 
 
 class RewardPlotter:
-    def __init__(self):
-        self.rewards = []
-        self.steps = []
+    """Interactive real-time reward plotter using matplotlib.
+
+    Creates an interactive plot window that updates in real-time as rewards
+    are received. Uses matplotlib's interactive mode (ion).
+
+    Attributes:
+        rewards: List of reward values to plot.
+        steps: List of step counts (x-axis values).
+        fig: Matplotlib figure object.
+        ax: Matplotlib axes object.
+        line: Matplotlib line object for the reward curve.
+    """
+
+    def __init__(self) -> None:
+        """Initialize the interactive reward plot.
+
+        Sets up matplotlib in interactive mode and creates the plot window.
+        """
+        self.rewards: List[float] = []
+        self.steps: List[int] = []
         # Set up the interactive plot
         plt.ion()
         self.fig, self.ax = plt.subplots()
@@ -15,7 +39,15 @@ class RewardPlotter:
         self.ax.legend()
         self.fig.show()
 
-    def update(self, data: dict):
+    def update(self, data: Dict[str, Any]) -> None:
+        """Update the plot with a new reward data point.
+
+        Args:
+            data: Dictionary containing "reward" (float) and "ongoing_steps" (int).
+
+        Raises:
+            ValueError: If "reward" key is missing or not a float.
+        """
         if "reward" not in data:
             raise ValueError("Data must contain a 'reward' key.")
         if not isinstance(data["reward"], float):

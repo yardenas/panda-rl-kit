@@ -1,8 +1,21 @@
 #!/usr/bin/env python
+"""Dummy cube pose publisher for simulation.
+
+This node publishes a static cube pose to the 'pose' topic for testing the
+pick-and-place pipeline without ArUco marker detection. The cube is placed
+at a fixed position on the table.
+"""
+
 import rospy
 from geometry_msgs.msg import PoseStamped
 
-def publish_dummy_pose():
+
+def publish_dummy_pose() -> None:
+    """Publish a static cube pose at 10 Hz.
+
+    The cube is placed at (0.66105, 0.0, 0.05) in the panda_link0 frame,
+    representing a position on the table in front of the robot.
+    """
     pub = rospy.Publisher('pose', PoseStamped, queue_size=10)
     rospy.init_node('dummy_pose_publisher', anonymous=True)
     rate = rospy.Rate(10)
