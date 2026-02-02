@@ -1,24 +1,40 @@
+"""Pick-and-place task environment for Franka Panda robot.
+
+This module implements the PandaPickCube environment which defines the
+pick-and-place task, reward shaping, episode termination logic, and
+observation/action spaces for the robot.
+"""
+
 from collections import deque
-from typing import Any, NamedTuple
+from typing import Any, NamedTuple, Dict, Tuple
 import numpy as np
+import numpy.typing as npt
 import time
 import rospy
 from fep_rl_experiment.robot import Robot
 
-from typing import Dict
-
 
 class Transition(NamedTuple):
-    """Container for a transition."""
+    """Container for a transition (deprecated, use experiment_driver.Transition).
+
+    Attributes:
+        observation: Observation dict.
+        action: Action array.
+        reward: Scalar reward.
+        discount: Discount factor.
+        next_observation: Next observation dict.
+        extras: Additional metadata.
+    """
 
     observation: Any
     action: Any
     reward: Any
     discount: Any
     next_observation: Any
-    extras: Any = ()  # pytype: disable=annotation-type-mismatch  # jax-ndarray
+    extras: Any = ()
 
 
+# Reward function configuration
 _REWARD_CONFIG = {
     "reward_scales": {
         "gripper_box": 4.0,
@@ -33,11 +49,45 @@ _REWARD_CONFIG = {
     "success_reward": 2.0,
 }
 
+# Success threshold: box height must be within 5cm of target height
 _SUCCESS_THRESHOLD = 0.05
 
 
 class PandaPickCube:
-    def __init__(self, robot: Robot):
+    """Pick-and-place environment for Panda robot with cube object.
+
+    This environment implements a pick-and-place task where the robot must
+    grasp a cube (tracked via ArUco markers) and lift it to a target height.
+
+    The observation space includes:
+    - Camera image (64x64 grayscale)
+    - End-effector position (3D)
+    - Gripper finger positions (2D, normalized)
+    - Action history (last 5 gripper actions)
+
+    The action space is:
+    - dy: Y-axis velocity command [-1, 1]
+    - dz: Z-axis velocity command [-1, 1]
+    - gripper: Open (>= 0) or close (< 0)
+
+    Note: X-axis is fixed to prevent robot from moving forward/backward.
+
+    Attributes:
+        robot: Robot interface for hardware communication.
+        prev_reward: Previous cumulative reward (for progress-based rewards).
+        reached_box: Binary flag indicating if gripper has reached box.
+        target_pos: Target 3D position for the cube.
+        target_quat: Target orientation quaternion.
+        init_joint_state: Initial joint configuration.
+        gripper_act: Deque storing recent gripper actions for observation.
+    """
+
+    def __init__(self, robot: Robot) -> None:
+        """Initialize the pick-and-place environment.
+
+        Args:
+            robot: Robot instance for hardware control.
+        """
         self.robot = robot
         self.prev_reward = 0.0
         self.reached_box = 0.0
@@ -59,9 +109,19 @@ class PandaPickCube:
                 ]
             ]
         )
-        self.gripper_act = deque(maxlen=5)
+        self.gripper_act: Deque[float] = deque(maxlen=5)
 
-    def reset(self) -> Dict[str, Any]:
+    def reset(self) -> Dict[str, npt.NDArray[np.float32]]:
+        """Reset the environment to start a new episode.
+
+        Resets the robot to home position, opens gripper, waits for cube
+        to be placed on table, and returns the initial observation.
+
+        Returns:
+            Dictionary with keys:
+                - 'pixels/view_0': Camera image (64, 64, 1) in [0, 1]
+                - 'state': Proprioceptive state (10,) = [ee_pos(3), fingers(2), actions(5)]
+        """
         self.robot.reset_service_cb(None)
         time.sleep(0.5)
         while not self.robot.fingers_open:
@@ -85,7 +145,27 @@ class PandaPickCube:
         obs = {"pixels/view_0": img, "state": propreiceptive}
         return obs
 
-    def step(self, action: np.ndarray):
+    def step(
+        self, action: npt.NDArray[np.float32]
+    ) -> Tuple[
+        Dict[str, npt.NDArray[np.float32]],
+        float,
+        bool,
+        Dict[str, Any]
+    ]:
+        """Execute one step in the environment.
+
+        Args:
+            action: Action array [dy, dz, gripper]. dy and dz are velocity
+                commands in [-1, 1], gripper >= 0 to open, < 0 to close.
+
+        Returns:
+            Tuple of (observation, reward, done, info):
+                - observation: Dict with 'pixels/view_0' and 'state' keys
+                - reward: Progress-based reward (always non-negative)
+                - done: True if episode should terminate
+                - info: Dict with reward components and task metrics
+        """
         only_yz = np.concatenate(
             ([self.robot.start_pos[0] - self.robot.get_end_effector_pos()[0]], action)
         )
@@ -123,7 +203,16 @@ class PandaPickCube:
         }
         return obs, reward, done, info
 
-    def _get_reward(self):
+    def _get_reward(self) -> Dict[str, float]:
+        """Compute raw reward components before scaling.
+
+        Returns:
+            Dictionary mapping reward component names to unscaled values in [0, 1]:
+                - gripper_box: Proximity of gripper to box (1 = touching)
+                - box_target: Proximity of box to target (1 = at target)
+                - no_floor_collision: 1 if no collision, 0 if collision
+                - robot_target_qpos: Joint configuration similarity to home
+        """
         box_pos = self.robot.get_cube_pos()
         # FIXME (yarden): double check that end effector pos == gripper pos
         gripper_pos = self.robot.get_end_effector_pos()
