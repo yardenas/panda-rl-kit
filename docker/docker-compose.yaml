@@ -36,6 +36,42 @@ services:
       rtprio: 99
       memlock: -1
 
+  fep_rl_ros2:
+    image: fep_rl_ros2
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.ros2
+    container_name: fep_rl_ros2
+    network_mode: host
+    ipc: host
+    cap_add:
+      - SYS_NICE
+    ulimits:
+      rtprio: 99
+      memlock: -1
+    volumes:
+      - ..:/code
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /dev:/dev:rw
+      - ${HOME}/.Xauthority:${HOME}/.Xauthority:ro
+    devices:
+      - /dev/dri:/dev/dri
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - XAUTHORITY=${XAUTHORITY:-${HOME}/.Xauthority}
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+      - ROS_DOMAIN_ID=0
+    expose:
+      - "20210-20230/udp"
+      - "33300-33400/udp"
+      - "5559"
+    ports:
+      - "20210-20230:20210-20230/udp"
+      - "33300-33400:33300-33400/udp"
+      - "5559:5559"
+
 
   safe_learning:
     image: safe_learning
