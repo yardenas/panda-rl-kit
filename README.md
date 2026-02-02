@@ -6,6 +6,7 @@ This repository hosts the ROS packages, launch files, and training utilities we 
 
 ## Repository Highlights
 - `fep_rl_experiment`: ROS1 (Noetic) package for robot bring-up, cube detection, experiment logging, and the online learning node.
+- `fep_rl_experiment_ros2`: **NEW!** ROS2 (Humble) port with full feature parity and improved architecture.
 - `scripts/remote_training.bash`: helper script that creates an SSH reverse tunnel and launches online learning with a custom session identifier. Run this script on the workstation that has direct network access to the robot controller.
 - `docker/`: Dockerfiles and compose configuration for fully reproducible runtime environments with ROS Noetic/Humble and Intel RealSense support.
 - `setup/`: step-by-step hardware and software guides for preparing a lab workstation without containers.
@@ -52,7 +53,7 @@ These GPU requirements are needed only for policy training; the robot host does 
 
 ## Docker Workflow
 
-The Docker environment mirrors the system dependencies described in the manual setup guides while isolating ROS and Python packages.
+The Docker environment mirrors the system dependencies described in the manual setup guides while isolating ROS and Python packages. You can choose between ROS1 (Noetic) or ROS2 (Humble).
 
 ### ROS1
 1. Make sure the `safe-learning` submodule is available (only needed the first time or after cleaning the checkout):
@@ -78,8 +79,39 @@ The Docker environment mirrors the system dependencies described in the manual s
    source /catkin_ws/devel/setup.bash
    ```
 
+### ROS2 (Recommended)
+
+1. Build the ROS2 image:
+   ```bash
+   docker compose -f docker/docker-compose.yaml build fep_rl_ros2
+   ```
+2. Launch the container:
+   ```bash
+   # Interactive session (removed after exit)
+   docker compose -f docker/docker-compose.yaml run --rm fep_rl_ros2 bash
+
+   # Or start in detached mode
+   docker compose -f docker/docker-compose.yaml up -d fep_rl_ros2
+
+   # Then connect to running container
+   docker exec -it $(docker ps -qf "ancestor=fep_rl_ros2") bash
+   ```
+3. Inside the container, the workspace at `/ros2_ws` is already built. Launch simulation or real robot:
+   ```bash
+   # Simulation
+   ros2 launch fep_rl_experiment_ros2 bringup_sim.launch.py
+
+   # Real robot
+   ros2 launch fep_rl_experiment_ros2 bringup_real.launch.py robot_ip:=172.16.1.11
+   ```
+
+See [`fep_rl_experiment_ros2/README.md`](fep_rl_experiment_ros2/README.md) for detailed ROS2 documentation.
+
 > [!TIP]
 > **Ports:** The default compose file maps UDP ranges `20210-20230` and `33300-33400` for robot comms. Adjust these if they conflict with services already running on your host.
+
+> [!NOTE]
+> **ROS1 vs ROS2:** Both versions maintain identical ZMQ protocols and are fully compatible with the `safe-learning` training stack. Choose ROS2 for new projects to benefit from improved architecture, better security, and long-term support.
 
 ## Safe-Learning Trainer
 
@@ -89,15 +121,20 @@ The Brax/JAX trainer lives in the `external/safe-learning` submodule. Pull it wi
 git submodule update --init --recursive
 ```
 
-The docker compose file now exposes two services:
+The docker compose file now exposes three services:
 
-- `fep_rl`: robot-side ROS1 (Noetic) sampling stack.
+- `fep_rl`: robot-side ROS1 (Noetic) sampling stack (original implementation).
+- `fep_rl_ros2`: robot-side ROS2 (Humble) sampling stack (recommended for new projects).
 - `safe_learning`: CUDA-enabled training environment. It installs dependencies from the submodule so it can evolve independently of ROS packages.
 
 Build all images after checking out the submodule:
 
 ```bash
+# Build all services
 docker compose -f docker/docker-compose.yaml build
+
+# Or build selectively
+docker compose -f docker/docker-compose.yaml build fep_rl_ros2 safe_learning
 ```
 
 To run the trainer on the same machine, launch both services and point `train_brax.py` at the exposed transition server endpoint (`tcp://host.docker.internal:5559`). When offloading training to a remote GPU machine, use `./scripts/remote_training.bash` to open a reverse tunnel (`remote:5555 -> local:5559`) and connect the trainer via `tcp://localhost:5555`. Run this helper on the workstation that talks to the robot so the tunnel originates from the host that can reach the transition server. The training service can be started with:
