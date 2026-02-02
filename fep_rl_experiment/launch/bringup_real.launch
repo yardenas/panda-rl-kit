@@ -1,7 +1,23 @@
 <launch>
-    <include file="$(find franka_example_controllers)/launch/cartesian_impedance_example_controller.launch">
-        <arg name="robot_ip" value="172.16.1.11"/>
+
+    <!-- Launch franka_control with robot_ip -->
+    <arg name="robot_ip" default="172.16.1.11"/>
+    <arg name="robot" default="panda"/>
+    <arg name="arm_id" default="$(arg robot)"/>
+
+    <include file="$(find franka_control)/launch/franka_control.launch">
+        <arg name="robot_ip" value="$(arg robot_ip)"/>
+        <arg name="robot" value="$(arg robot)"/>
+        <arg name="arm_id" value="$(arg arm_id)"/>
     </include>
+
+    <!-- Override realtime config to ignore realtime requirements -->
+    <param name="/franka_control/realtime_config" value="ignore"/>
+
+    <!-- Load controller config and spawn controller -->
+    <rosparam command="load" file="$(find franka_example_controllers)/config/franka_example_controllers.yaml" subst_value="true"/>
+    <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" args="cartesian_impedance_example_controller"/>
+    
     <include file="$(find realsense2_camera)/launch/rs_camera.launch">
         <arg name="camera" value="camera" />
         <arg name="enable_depth" value="true"/>
@@ -10,6 +26,7 @@
         <arg name="usb_port_id" value=""/>
         <arg name="serial_no" value=""/>
     </include>
+
     <arg name="markerIds"       default="571 581 591 601 611 621"/>      <!-- set your marker id -->
     <arg name="markerSize"      default="0.042"/>    <!-- in m -->
     <arg name="cubeSize"        default="0.05"/>    <!-- in m -->

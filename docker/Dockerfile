@@ -41,6 +41,7 @@ RUN apt-get update && apt-get install -y \
     python3-rosdep\
     ros-noetic-libfranka ros-noetic-franka-ros\
     ros-noetic-realsense2-camera\
+    ros-noetic-aruco-ros\
     apt-transport-https\
     ccache\
     && rm -rf /var/lib/apt/lists/*
@@ -106,5 +107,4 @@ RUN catkin build --no-status -j ${MAKE_JOBS} -p ${MAKE_JOBS}
 WORKDIR /code
 RUN echo "alias killall='rosnode cleanup; killall -9 gazebo; killall -9 gzserver; killall -9 gzclient'"  >> ~/.bashrc
 RUN echo "source /catkin_ws/devel/setup.bash" >> ~/.bashrc
-RUN echo "[[ -f /code/devel/setup.bash ]] && source /code/devel/setup.bash" >> ~/.bashrc
-RUN echo "cd /code/.setup; source load_api_key.sh; cd /code" >> ~/.bashrc
+RUN echo "[[ -f /catkin_ws/devel/setup.bash ]] && source /catkin_ws/devel/setup.bash" >> ~/.bashrc
