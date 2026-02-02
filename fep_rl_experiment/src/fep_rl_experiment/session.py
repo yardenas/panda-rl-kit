@@ -1,9 +1,44 @@
+"""Session management for experiment tracking and logging.
+
+This module provides the Session class which coordinates CSV logging and
+real-time reward plotting for RL experiments.
+"""
+
+from typing import Dict, List, Any, Optional
 from fep_rl_experiment.logger import Logger
 from fep_rl_experiment.plot import RewardPlotter
 
 
 class Session:
-    def __init__(self, directory=".", filename_prefix="log", filename=None):
+    """Manages experiment logging and real-time reward visualization.
+
+    This class combines CSV logging via Logger and real-time plotting via
+    RewardPlotter. It maintains cumulative step counts across trajectories
+    and handles resumption from existing log files.
+
+    Attributes:
+        logger: Logger instance for CSV output.
+        ongoing_steps: Cumulative step counter across all trajectories.
+        plotter: RewardPlotter instance for visualization.
+    """
+
+    def __init__(
+        self,
+        directory: str = ".",
+        filename_prefix: str = "log",
+        filename: Optional[str] = None
+    ) -> None:
+        """Initialize the session with logging and plotting.
+
+        If an existing log file is found, loads previous data and updates
+        the plot to show historical rewards.
+
+        Args:
+            directory: Directory to store log files (default: current directory).
+            filename_prefix: Prefix for generated log filenames (default: "log").
+            filename: Explicit filename (without .csv extension). If None, generates
+                timestamped filename using prefix.
+        """
         self.logger = Logger(
             directory=directory, filename_prefix=filename_prefix, filename=filename
         )
@@ -29,7 +64,15 @@ class Session:
         self.plotter.fig.canvas.draw()
         self.plotter.fig.canvas.flush_events()
 
-    def update(self, data: dict):
+    def update(self, data: Dict[str, Any]) -> None:
+        """Log a new trajectory's data and update cumulative step counter.
+
+        Args:
+            data: Dictionary containing at least "reward" (float) and "steps" (int).
+
+        Raises:
+            ValueError: If "reward" key is missing or not a float.
+        """
         if "reward" not in data or not isinstance(data["reward"], float):
             raise ValueError("Data must include a float 'reward'.")
         self.ongoing_steps += data["steps"]
@@ -39,5 +82,10 @@ class Session:
         # self.plotter.update(data)
 
     @property
-    def steps(self):
+    def steps(self) -> List[int]:
+        """Get the list of step counts for all logged trajectories.
+
+        Returns:
+            List of cumulative step counts.
+        """
         return self.plotter.steps
