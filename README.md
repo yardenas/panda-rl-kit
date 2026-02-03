@@ -5,52 +5,79 @@
 This repository hosts the ROS packages, launch files, and training utilities we use to run online reinforcement-learning experiments on a real Franka Emika Panda manipulator. The goal is to make it straightforward to reproduce the hardware setup, bring up the robot, and iterate on policies either directly on hardware or in simulation.
 
 ## Repository Highlights
-- `fep_rl_experiment`: ROS package for robot bring-up, cube detection, experiment logging, and the online learning node.
+- `fep_rl_experiment`: ROS1 (Noetic) package for robot bring-up, cube detection, experiment logging, and the online learning node.
 - `scripts/remote_training.bash`: helper script that creates an SSH reverse tunnel and launches online learning with a custom session identifier. Run this script on the workstation that has direct network access to the robot controller.
-- `docker/`: Dockerfile and compose configuration for a fully reproducible runtime environment with ROS Noetic and Intel RealSense support.
+- `docker/`: Dockerfiles and compose configuration for fully reproducible runtime environments with ROS Noetic/Humble and Intel RealSense support.
 - `setup/`: step-by-step hardware and software guides for preparing a lab workstation without containers.
 - `external/safe-learning`: Git submodule with the Brax/JAX training stack (policy optimisation and safety-critical RL).
 
 ## Before You Start
+1. Clone the repository: `git clone git@github.com:yardenas/panda-rl-kit.git; cd panda-rl-kit`
+2. Review the hardware checklist in `setup/README.hardware.md`.
+3. Prepare your Ubuntu 20.04 workstation following `setup/README.software.md` **or** use the Docker workflow below.
+4. Verify that your Franka Emika Panda has an active FCI license and that you can ping the robot control cabinet from your workstation.
 
-1. Review the hardware checklist in `setup/README.hardware.md`.
-2. Prepare your Ubuntu 20.04 workstation following `setup/README.software.md` **or** use the Docker workflow below.
-3. Verify that your Franka Emika Panda has an active FCI license and that you can ping the robot control cabinet from your workstation.
+## GPU Requirements
 
-## GPU Requirements 
+The CUDA-enabled training stack (`safe_learning`) requires an NVIDIA GPU with compatible driver. The Dockerfile uses CUDA 12.2 by default, which is compatible with most modern setups.
 
-The CUDA-enabled training stack (`safe_learning`) has been validated with the following NVIDIA components. Make sure your GPU workstation matches these versions (or newer) before launching the trainer:
+### Minimum Requirements
 
-- NVIDIA driver `555.42.06`
-- CUDA runtime `12.5`
-- cuDNN `9.10.2` for CUDA 12
+- NVIDIA GPU (Compute Capability 7.0+)
+- NVIDIA driver 535.x or newer (check with `nvidia-smi`)
+- Docker with NVIDIA Container Toolkit
 
-You can confirm the driver and CUDA versions with `nvidia-smi`; cuDNN is reported by the installed `nvidia-cudnn-cu12` package inside the training environment. These requirements are needed only for policy training, the robot host is not required to have them.
+### CUDA Version Compatibility
+
+The Dockerfile base image can be adjusted based on your driver version:
+
+| NVIDIA Driver | Compatible CUDA | Dockerfile Base Image |
+|---------------|-----------------|----------------------|
+| 535.x - 545.x | CUDA 12.2 | `nvidia/cuda:12.2.2-cudnn8-devel-ubuntu22.04` (default) |
+| 545.x - 550.x | CUDA 12.3 | `nvidia/cuda:12.3.2-cudnn8-devel-ubuntu22.04` |
+| 550.x+ | CUDA 12.4 | `nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04` |
+| 555.x+ | CUDA 12.5 | `nvidia/cuda:12.5.1-cudnn-devel-ubuntu22.04` |
+
+**Check your driver:**
+```bash
+nvidia-smi --query-gpu=driver_version --format=csv,noheader
+```
+
+If you get CUDA compatibility errors when starting the container, update the `FROM` line in `docker/Dockerfile.safe_learning` to match your driver version, then rebuild:
+```bash
+docker compose -f docker/docker-compose.yaml build safe_learning
+```
+
+These GPU requirements are needed only for policy training; the robot host does not require an NVIDIA GPU.
 
 ## Docker Workflow
 
 The Docker environment mirrors the system dependencies described in the manual setup guides while isolating ROS and Python packages.
 
+### ROS1
 1. Make sure the `safe-learning` submodule is available (only needed the first time or after cleaning the checkout):
    ```bash
    git submodule update --init --recursive
    ```
 2. Build the image (run from the repository root):
    ```bash
-   docker compose -f docker/docker-compose.yaml build
+   docker compose -f docker/docker-compose.yaml build fep_rl
    ```
-3. Allow container access to the X server if you plan to run RViz from the container (Linux host):
-   ```bash
-   xhost +local:docker
-   ```
-4. Launch the container:
+3. Launch the container:
    ```bash
    docker compose -f docker/docker-compose.yaml run --rm fep_rl bash
+
+   # Or start in detached mode
+   docker compose -f docker/docker-compose.yaml up -d fep_rl
+
+   # Then connect to running container
+   docker exec -it $(docker ps -qf "ancestor=fep_rl") bash
    ```
-5. Inside the container, the workspace at `/catkin_ws` is already built during the image build. Activate it with:
+4. Inside the container, the workspace at `/catkin_ws` is already built during the image build. Activate it with:
    ```bash
    source /catkin_ws/devel/setup.bash
    ```
+
 > [!TIP]
 > **Ports:** The default compose file maps UDP ranges `20210-20230` and `33300-33400` for robot comms. Adjust these if they conflict with services already running on your host.
 
@@ -64,10 +91,10 @@ git submodule update --init --recursive
 
 The docker compose file now exposes two services:
 
-- `fep_rl`: robot-side ROS / sampling stack (unchanged).
+- `fep_rl`: robot-side ROS1 (Noetic) sampling stack.
 - `safe_learning`: CUDA-enabled training environment. It installs dependencies from the submodule so it can evolve independently of ROS packages.
 
-Build both images after checking out the submodule:
+Build all images after checking out the submodule:
 
 ```bash
 docker compose -f docker/docker-compose.yaml build
@@ -76,7 +103,11 @@ docker compose -f docker/docker-compose.yaml build
 To run the trainer on the same machine, launch both services and point `train_brax.py` at the exposed transition server endpoint (`tcp://host.docker.internal:5559`). When offloading training to a remote GPU machine, use `./scripts/remote_training.bash` to open a reverse tunnel (`remote:5555 -> local:5559`) and connect the trainer via `tcp://localhost:5555`. Run this helper on the workstation that talks to the robot so the tunnel originates from the host that can reach the transition server. The training service can be started with:
 
 ```bash
-docker compose -f docker/docker-compose.yaml run --rm safe_learning bash
+# Start the training container
+docker compose -f docker/docker-compose.yaml up -d safe_learning
+
+# Connect to it
+docker exec -it $(docker ps -qf "ancestor=safe_learning") bash
 ```
 
 <details>
