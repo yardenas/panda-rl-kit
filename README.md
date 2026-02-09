@@ -138,6 +138,32 @@ Keep the SSH session open while training.
 
 For in-depth guidance, see `setup/README.safe_learning.md`.
 
+### Environment Configuration
+
+**Weights & Biases API Key:**
+
+The training stack uses Weights & Biases for experiment tracking. Set your API key on the host machine before starting the container:
+
+```bash
+# On your host machine (not inside the container)
+export WANDB_API_KEY=your_api_key_here
+
+# Then start the container (the API key will be passed through)
+docker compose -f docker/docker-compose.yaml up -d safe_learning
+```
+
+For persistence, add it to your shell profile:
+
+```bash
+# Add to ~/.bashrc or ~/.zshrc
+echo 'export WANDB_API_KEY=your_api_key_here' >> ~/.bashrc
+source ~/.bashrc
+```
+
+To find your API key, visit https://wandb.ai/authorize
+
+The docker-compose configuration automatically passes the `WANDB_API_KEY` from your host environment into the container.
+
 ### Pretraining a Prior Policy
 
 1. **Train the prior in simulation:** on the training machine run:
@@ -171,6 +197,29 @@ With your workspace sourced (`source devel/setup.bash`), you can start the main 
   Replace `<wandb_run_id>` with the Run ID from the simulation job (for example `username/project/abc123`). The online run resumes logging to the existing W&B project while seeding the policy and replay buffer with the simulated prior.
 
 Experiment metrics are logged under `experiment_sessions/` and reward telemetry is published on `/instant_reward` and `/episode_reward`.
+
+## Troubleshooting
+
+### GPU Memory Issues
+
+If you encounter CUDA out-of-memory errors during training, try setting these environment variables before running:
+
+```bash
+# Inside the safe_learning container
+export XLA_FLAGS=--xla_gpu_triton_gemm_any=true
+export MADRONA_DISABLE_CUDA_HEAP_SIZE=1
+
+# Then run training
+uv run python train_brax.py +experiment=franka_sim_to_real
+```
+
+These flags help reduce memory usage:
+- `XLA_FLAGS`: Enables Triton GEMM kernels which can be more memory-efficient
+- `MADRONA_DISABLE_CUDA_HEAP_SIZE`: Disables pre-allocation of large CUDA heap in Madrona simulator
+
+### W&B Authentication
+
+If training fails with authentication errors, ensure your W&B API key is set (see Environment Configuration above).
 
 ## Manual Installation
 

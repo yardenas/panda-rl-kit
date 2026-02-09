@@ -45,21 +45,32 @@ WORKDIR /opt
 
 RUN uv pip install "cmake>=3.31.0"
 
+RUN echo "Cloning and building Madrona-MJX from ${MADRONA_MJX_REPO} with LOAD_VULKAN=${MADRONA_LOAD_VULKAN}"
 RUN git clone ${MADRONA_MJX_REPO} madrona_mjx \
     && cd madrona_mjx \
+    && git checkout c34f3cf6d95148dba50ffeb981aea033b8a4d225 \
     && git submodule update --init --recursive \
     && mkdir -p build \
     && cd build \
     && cmake -DLOAD_VULKAN=${MADRONA_LOAD_VULKAN} .. \
     && make -j"$(nproc)" \
     && cd /opt/madrona_mjx \
-    && uv pip install -e .
+    && uv pip install -e . \
+    $$ uv sync --no-deps
+RUN echo "Madrona-MJX installation complete. Files located in /opt/madrona_mjx"
 
 WORKDIR /workspace
 
 COPY external/safe-learning /workspace/external/safe-learning
 WORKDIR /workspace/external/safe-learning
 
-RUN uv sync --no-dev
+
+# Reinstall madrona_mjx into the uv environment after sync
+# RUN pip install -e /opt/madrona_mjx/
+
+# Ensure environment is activated on container start
+RUN echo 'export VIRTUAL_ENV=/opt/venvs/safe-learning' >> /root/.bashrc && \
+    echo 'export PATH=${VIRTUAL_ENV}/bin:/root/.local/bin:$PATH' >> /root/.bashrc && \
+    echo 'export UV_PROJECT_ENVIRONMENT=${VIRTUAL_ENV}' >> /root/.bashrc
 
 CMD ["/bin/bash"]

@@ -49,6 +49,7 @@ services:
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=all
+      - WANDB_API_KEY=${WANDB_API_KEY}
     network_mode: "host"
     deploy:
       resources:
