@@ -6,15 +6,15 @@ date-released: 2025-11-07
 license: Apache-2.0
 
 authors:
-  - given-names: Yarden
-    family-names: As
-    affiliation: ETH Zurich
-  - given-names: Rene
-    family-names: Zurbruegg
-    affiliation: ETH Zurich
-  - given-names: Chenhao
-    family-names: Li
-    affiliation: ETH Zurich
+  - given-names: Anonymous
+    family-names: Author
+    affiliation: Anonymous Institution
+  - given-names: Anonymous
+    family-names: Contributor
+    affiliation: Anonymous Institution
+  - given-names: Anonymous
+    family-names: Collaborator
+    affiliation: Anonymous Institution
 
-repository-code: https://github.com/yardenas/panda-rl-kit
-url: https://github.com/yardenas/panda-rl-kit
+repository-code: https://example.com/anonymous/repository
+url: https://example.com/anonymous/repository

@@ -214,7 +214,7 @@ class PandaPickCube:
                 - robot_target_qpos: Joint configuration similarity to home
         """
         box_pos = self.robot.get_cube_pos()
-        # FIXME (yarden): double check that end effector pos == gripper pos
+        # FIXME (author): double check that end effector pos == gripper pos
         gripper_pos = self.robot.get_end_effector_pos()
         pos_err = np.linalg.norm(box_pos - self.target_pos)
         box_target = 1.0 - np.tanh(5 * (pos_err))

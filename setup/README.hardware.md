@@ -14,7 +14,7 @@ This guide documents the physical setup that was used to collect data and run th
 - Stable workbench that can anchor the Panda base and safely accommodate the camera and marker target.
 - Physical E-stop button within reach of the operator and clear line of sight to the robot.
 
-Note: The RealSense D435 has not been validated in this setup. If you choose to experiment with it, set the Safe-Learning pretraining camera `fovy` to `42` degrees in `external/safe-learning/ss2r/benchmark_suites/mujoco_playground/pick_cartesian/assets/xmls/mjx_single_cube_camera.xml` so the simulated optics match the hardware. Keep the rest of the camera pose aligned with your calibration.
+Note: The RealSense D435 has not been validated in this setup. If you choose to experiment with it, set the Training Submodule pretraining camera `fovy` to `42` degrees in `external/training-submodule/ss2r/benchmark_suites/mujoco_playground/pick_cartesian/assets/xmls/mjx_single_cube_camera.xml` so the simulated optics match the hardware. Keep the rest of the camera pose aligned with your calibration.
 
 <img src="../assets/panda-description.png" alt="Panda hardware overview" width="256" />
 
@@ -36,7 +36,7 @@ The launch files ship with a static transform from the Panda base frame (`panda_
 2. Inspect the transform in RViz. Overlay the RGB image and depth point cloud to confirm they roughly agree; that shold suffice since we later run RL to adapt to these small errors. 
 3. If the camera pose differs significantly from the default (~0.9 m above and slightly offset from the base), update both of the following:
    - **ROS bring-up:** edit the `args` of the `static_transform_publisher` in `fep_rl_experiment/launch/bringup_real.launch`. The first three numbers are the XYZ translation in metres; the next four numbers are the quaternion (x, y, z, w). Restart the launch file after any change.
-   - **Safe-Learning simulator:** edit the `<camera>` entry in `external/safe-learning/ss2r/benchmark_suites/mujoco_playground/pick_cartesian/assets/xmls/mjx_single_cube_camera.xml`. Set the `pos="x y z"` attribute to match your measured translation and adjust the `euler` angles (in radians) so the simulated camera view matches the real one. Keeping both files in sync ensures that the rendered observations used for policy training align with the real camera viewpoint. See [Mujoco Viewer](https://mujoco.readthedocs.io/en/stable/python.html#interactive-viewer) to inspect the camera configuration.
+   - **Training Submodule simulator:** edit the `<camera>` entry in `external/training-submodule/ss2r/benchmark_suites/mujoco_playground/pick_cartesian/assets/xmls/mjx_single_cube_camera.xml`. Set the `pos="x y z"` attribute to match your measured translation and adjust the `euler` angles (in radians) so the simulated camera view matches the real one. Keeping both files in sync ensures that the rendered observations used for policy training align with the real camera viewpoint. See [Mujoco Viewer](https://mujoco.readthedocs.io/en/stable/python.html#interactive-viewer) to inspect the camera configuration.
 4. Update the ArUco marker size (`markerSize`) and cube size (`cubeSize`) arguments if you use different targets.
 
 ## Operational Safety Checklist

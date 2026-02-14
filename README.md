@@ -9,17 +9,17 @@ This repository hosts the ROS packages, launch files, and training utilities we 
 - `scripts/remote_training.bash`: helper script that creates an SSH reverse tunnel and launches online learning with a custom session identifier. Run this script on the workstation that has direct network access to the robot controller.
 - `docker/`: Dockerfiles and compose configuration for fully reproducible runtime environments with ROS Noetic/Humble and Intel RealSense support.
 - `setup/`: step-by-step hardware and software guides for preparing a lab workstation without containers.
-- `external/safe-learning`: Git submodule with the Brax/JAX training stack (policy optimisation and safety-critical RL).
+- `external/training-submodule`: Git submodule with the Brax/JAX training stack (policy optimisation and safety-critical RL).
 
 ## Before You Start
-1. Clone the repository: `git clone git@github.com:yardenas/panda-rl-kit.git; cd panda-rl-kit`
+1. Clone the repository: `git clone git@example.com:anonymous/repository.git; cd panda-rl-kit`
 2. Review the hardware checklist in `setup/README.hardware.md`.
 3. Prepare your Ubuntu 20.04 workstation following `setup/README.software.md` **or** use the Docker workflow below.
 4. Verify that your Franka Emika Panda has an active FCI license and that you can ping the robot control cabinet from your workstation.
 
 ## GPU Requirements
 
-The CUDA-enabled training stack (`safe_learning`) requires an NVIDIA GPU with compatible driver. The Dockerfile uses CUDA 12.2 by default, which is compatible with most modern setups.
+The CUDA-enabled training stack (`training_submodule`) requires an NVIDIA GPU with compatible driver. The Dockerfile uses CUDA 12.2 by default, which is compatible with most modern setups.
 
 ### Minimum Requirements
 
@@ -43,9 +43,9 @@ The Dockerfile base image can be adjusted based on your driver version:
 nvidia-smi --query-gpu=driver_version --format=csv,noheader
 ```
 
-If you get CUDA compatibility errors when starting the container, update the `FROM` line in `docker/Dockerfile.safe_learning` to match your driver version, then rebuild:
+If you get CUDA compatibility errors when starting the container, update the `FROM` line in `docker/Dockerfile.training_submodule` to match your driver version, then rebuild:
 ```bash
-docker compose -f docker/docker-compose.yaml build safe_learning
+docker compose -f docker/docker-compose.yaml build training_submodule
 ```
 
 These GPU requirements are needed only for policy training; the robot host does not require an NVIDIA GPU.
@@ -55,7 +55,7 @@ These GPU requirements are needed only for policy training; the robot host does 
 The Docker environment mirrors the system dependencies described in the manual setup guides while isolating ROS and Python packages.
 
 ### ROS1
-1. Make sure the `safe-learning` submodule is available (only needed the first time or after cleaning the checkout):
+1. Make sure the `training-submodule` submodule is available (only needed the first time or after cleaning the checkout):
    ```bash
    git submodule update --init --recursive
    ```
@@ -81,9 +81,9 @@ The Docker environment mirrors the system dependencies described in the manual s
 > [!TIP]
 > **Ports:** The default compose file maps UDP ranges `20210-20230` and `33300-33400` for robot comms. Adjust these if they conflict with services already running on your host.
 
-## Safe-Learning Trainer
+## Training Submodule
 
-The Brax/JAX trainer lives in the `external/safe-learning` submodule. Pull it with:
+The Brax/JAX trainer lives in the `external/training-submodule` submodule. Pull it with:
 
 ```bash
 git submodule update --init --recursive
@@ -92,7 +92,7 @@ git submodule update --init --recursive
 The docker compose file now exposes two services:
 
 - `fep_rl`: robot-side ROS1 (Noetic) sampling stack.
-- `safe_learning`: CUDA-enabled training environment. It installs dependencies from the submodule so it can evolve independently of ROS packages.
+- `training_submodule`: CUDA-enabled training environment. It installs dependencies from the submodule so it can evolve independently of ROS packages.
 
 Build all images after checking out the submodule:
 
@@ -104,10 +104,10 @@ To run the trainer on the same machine, launch both services and point `train_br
 
 ```bash
 # Start the training container
-docker compose -f docker/docker-compose.yaml up -d safe_learning
+docker compose -f docker/docker-compose.yaml up -d training_submodule
 
 # Connect to it
-docker exec -it $(docker ps -qf "ancestor=safe_learning") bash
+docker exec -it $(docker ps -qf "ancestor=training_submodule") bash
 ```
 
 <details>
@@ -128,7 +128,7 @@ When the robot and GPU trainer live on different networks you need a reverse SSH
    Then, in another terminal on the robot workstation, start `roslaunch fep_rl_experiment bringup_real.launch`.
 4. **Run the trainer on the remote GPU:** point your training job at `tcp://localhost:<remote_port>`; for example:
    ```bash
-   docker compose -f docker/docker-compose.yaml run --rm safe_learning \
+   docker compose -f docker/docker-compose.yaml run --rm training_submodule \
      python train_brax.py --transition-endpoint tcp://localhost:5555
    ```
 
@@ -136,7 +136,7 @@ Keep the SSH session open while training.
 
 </details>
 
-For in-depth guidance, see `setup/README.safe_learning.md`.
+For in-depth guidance, see `setup/README.training_submodule.md`.
 
 ### Pretraining a Prior Policy
 

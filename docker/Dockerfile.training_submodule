@@ -30,13 +30,13 @@ RUN apt-get update && apt-get install -y \
     unzip \
     && rm -rf /var/lib/apt/lists/*
 
-ARG MADRONA_MJX_REPO=https://github.com/shacklettbp/madrona_mjx.git
-ARG MADRONA_LOAD_VULKAN=OFF
+ARG ACCELERATOR_REPO=https://example.com/anonymous/accelerator.git
+ARG ACCELERATOR_LOAD_VULKAN=OFF
 
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH=/root/.local/bin:$PATH
 
-ENV VIRTUAL_ENV=/opt/venvs/safe-learning
+ENV VIRTUAL_ENV=/opt/venvs/training-submodule
 RUN uv venv ${VIRTUAL_ENV} --python 3.11.6
 ENV PATH=${VIRTUAL_ENV}/bin:/root/.local/bin:$PATH
 ENV UV_PROJECT_ENVIRONMENT=${VIRTUAL_ENV}
@@ -45,20 +45,20 @@ WORKDIR /opt
 
 RUN uv pip install "cmake>=3.31.0"
 
-RUN git clone ${MADRONA_MJX_REPO} madrona_mjx \
-    && cd madrona_mjx \
+RUN git clone ${ACCELERATOR_REPO} accelerator_repo \
+    && cd accelerator_repo \
     && git submodule update --init --recursive \
     && mkdir -p build \
     && cd build \
-    && cmake -DLOAD_VULKAN=${MADRONA_LOAD_VULKAN} .. \
+    && cmake -DLOAD_VULKAN=${ACCELERATOR_LOAD_VULKAN} .. \
     && make -j"$(nproc)" \
-    && cd /opt/madrona_mjx \
+    && cd /opt/accelerator_repo \
     && uv pip install -e .
 
 WORKDIR /workspace
 
-COPY external/safe-learning /workspace/external/safe-learning
-WORKDIR /workspace/external/safe-learning
+COPY external/training-submodule /workspace/external/training-submodule
+WORKDIR /workspace/external/training-submodule
 
 RUN uv sync --no-dev
 
