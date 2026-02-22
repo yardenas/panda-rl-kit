@@ -9,6 +9,7 @@ project(fep_rl_experiment)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   rospy
+  std_srvs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -74,4 +75,3 @@ catkin_install_python(PROGRAMS
 #   # myfile2
 #   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 # )
-

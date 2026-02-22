@@ -16,6 +16,7 @@ import time
 import numpy as np
 import numpy.typing as npt
 from std_msgs.msg import Float32
+from std_srvs.srv import Trigger, TriggerRequest, TriggerResponse
 from fep_rl_experiment.transitions_server import TransitionsServer
 from fep_rl_experiment.session import Session
 from fep_rl_experiment.environment import PandaPickCube
@@ -82,6 +83,7 @@ class ExperimentDriver:
         num_steps = len(self.session.steps)
         self.robot = Robot()
         self.env = PandaPickCube(self.robot)
+        self._trial_lock = threading.Lock()
         self.running = False
         self.run_id = num_steps
         self.transitions_server = TransitionsServer(self, safe_mode=True)
@@ -92,6 +94,11 @@ class ExperimentDriver:
         self.reward_pub = rospy.Publisher("instant_reward", Float32, queue_size=10)
         self.episode_reward_pub = rospy.Publisher(
             "episode_reward", Float32, queue_size=10
+        )
+        self.local_policy_trial_service = rospy.Service(
+            "run_local_policy_trial",
+            Trigger,
+            self.run_local_policy_trial_service_cb,
         )
         rospy.loginfo("Experiment driver initialized.")
 
@@ -106,10 +113,48 @@ class ExperimentDriver:
         Returns:
             List of Transition objects representing the trajectory.
         """
-        rospy.loginfo(f"Starting trajectory sampling... Run id: {self.run_id}")
-        trajectory = self._collect_trajectory(policy)
-        self.summarize_trial(trajectory)
-        return trajectory
+        with self._trial_lock:
+            rospy.loginfo(f"Starting trajectory sampling... Run id: {self.run_id}")
+            trajectory = self._collect_trajectory(policy)
+            self.summarize_trial(trajectory)
+            return trajectory
+
+    def run_local_policy_trial_service_cb(
+        self, _req: TriggerRequest
+    ) -> TriggerResponse:
+        """Run a single trial with an ONNX policy loaded from local disk.
+
+        The ONNX path is read from ROS param "~local_onnx_policy_path" at call time,
+        so callers can change it between requests.
+        """
+        policy_path = rospy.get_param("~local_onnx_policy_path", "")
+        if not policy_path:
+            return TriggerResponse(
+                success=False,
+                message=(
+                    "Missing ROS param '~local_onnx_policy_path'. "
+                    "Set it to a local .onnx file path."
+                ),
+            )
+        try:
+            policy_fn = self.transitions_server.parse_policy_path(policy_path)
+        except Exception as exc:  # pylint: disable=broad-except
+            message = f"Failed to load ONNX policy from '{policy_path}': {exc}"
+            rospy.logerr(message)
+            return TriggerResponse(success=False, message=message)
+        try:
+            trajectory = self.sample_trajectory(policy_fn)
+        except RuntimeError as exc:
+            message = f"Trial failed at runtime: {exc}"
+            rospy.logerr(message)
+            return TriggerResponse(success=False, message=message)
+        total_reward = float(sum(transition.reward for transition in trajectory))
+        message = (
+            f"Completed local policy trial with {len(trajectory)} steps, "
+            f"reward={total_reward:.3f}, run_id={self.run_id - 1}."
+        )
+        rospy.loginfo(message)
+        return TriggerResponse(success=True, message=message)
 
     def summarize_trial(self, transitions: List[Transition]) -> None:
         """Compute and log summary statistics for a completed trajectory.

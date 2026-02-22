@@ -1,22 +1,13 @@
 <launch>
 
-    <!-- Launch franka_control with robot_ip -->
+    <!-- Launch cartesian impedance example controller -->
     <arg name="robot_ip" default="172.16.1.11"/>
-    <arg name="robot" default="panda"/>
-    <arg name="arm_id" default="$(arg robot)"/>
+    <arg name="realtimeConfig" default="ignore"/>
+    <param name="/franka_control/realtime_config" value="$(arg realtimeConfig)"/>
 
-    <include file="$(find franka_control)/launch/franka_control.launch">
+    <include file="$(find franka_example_controllers)/launch/cartesian_impedance_example_controller.launch">
         <arg name="robot_ip" value="$(arg robot_ip)"/>
-        <arg name="robot" value="$(arg robot)"/>
-        <arg name="arm_id" value="$(arg arm_id)"/>
     </include>
-
-    <!-- Override realtime config to ignore realtime requirements -->
-    <param name="/franka_control/realtime_config" value="ignore"/>
-
-    <!-- Load controller config and spawn controller -->
-    <rosparam command="load" file="$(find franka_example_controllers)/config/franka_example_controllers.yaml" subst_value="true"/>
-    <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" args="cartesian_impedance_example_controller"/>
     
     <include file="$(find realsense2_camera)/launch/rs_camera.launch">
         <arg name="camera" value="camera" />
@@ -52,10 +43,12 @@
     <arg name="sessionId" default="training_session"/>
     <arg name="trajectoryLength" default="250"/>
     <arg name="dt" default="0.05"/>
+    <arg name="localOnnxPolicyPath" default=""/>
     <node pkg="fep_rl_experiment" type="online_learning.py" output="screen" name="online_learning">
         <param name="session_id"        value="$(arg sessionId)"/>
         <param name="trajectory_length"        value="$(arg trajectoryLength)"/>
         <param name="dt"        value="$(arg dt)"/>
+        <param name="local_onnx_policy_path" value="$(arg localOnnxPolicyPath)"/>
     </node>
    <node pkg="tf2_ros" type="static_transform_publisher" name="camera_link_broadcaster" args="0.915 -0.065 0.32 -0.2503586 -0.0032775 0.968064 -0.0126727 panda_link0 camera_link"/>
 </launch>

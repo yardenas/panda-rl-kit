@@ -6,7 +6,7 @@ the robot, and returns flattened transitions for training.
 """
 
 import pickle
-from typing import Mapping, List, Tuple, Dict, Any, Optional
+from typing import Mapping, List, Tuple, Dict, Any
 import zmq
 import rospy
 import time
@@ -128,8 +128,27 @@ class TransitionsServer:
         rospy.loginfo("Sampling finished")
         return trajectory
 
+    def _parse_policy_session(self, session: ort.InferenceSession):
+        """Create an inference function from an ONNX Runtime session.
+
+        Args:
+            session: Initialized ONNX Runtime inference session.
+
+        Returns:
+            Callable that maps observation dicts to action arrays.
+        """
+        # Get input and output names (assuming 1 input and 1 output)
+        output_name = session.get_outputs()[0].name
+
+        def infer(inputs: Mapping[str, np.ndarray]) -> np.ndarray:
+            inputs = {k: v.astype(np.float32)[None] for k, v in inputs.items()}
+            result = session.run([output_name], inputs)
+            return result[0][0]
+
+        return infer
+
     def parse_policy(self, policy_bytes: bytes):
-        """Create an inference function from serialized ONNX policy.
+        """Create an inference function from serialized ONNX policy bytes.
 
         Args:
             policy_bytes: Serialized ONNX model bytes.
@@ -141,15 +160,15 @@ class TransitionsServer:
             policy_bytes,
             providers=["CUDAExecutionProvider", "CPUExecutionProvider"],
         )
-        # Get input and output names (assuming 1 input and 1 output)
-        output_name = session.get_outputs()[0].name
+        return self._parse_policy_session(session)
 
-        def infer(inputs: Mapping[str, np.ndarray]) -> np.ndarray:
-            inputs = {k: v.astype(np.float32)[None] for k, v in inputs.items()}
-            result = session.run([output_name], inputs)
-            return result[0][0]
-
-        return infer
+    def parse_policy_path(self, policy_path: str):
+        """Create an inference function from an ONNX file path."""
+        session = ort.InferenceSession(
+            policy_path,
+            providers=["CUDAExecutionProvider", "CPUExecutionProvider"],
+        )
+        return self._parse_policy_session(session)
 
 
 def flatten_trajectories(trajectories: List[List]) -> Tuple[
