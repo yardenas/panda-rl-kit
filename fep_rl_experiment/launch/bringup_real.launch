@@ -2,6 +2,8 @@
 
     <!-- Launch cartesian impedance example controller -->
     <arg name="robot_ip" default="172.16.1.11"/>
+    <arg name="realtimeConfig" default="ignore"/>
+    <param name="/franka_control/realtime_config" value="$(arg realtimeConfig)"/>
 
     <include file="$(find franka_example_controllers)/launch/cartesian_impedance_example_controller.launch">
         <arg name="robot_ip" value="$(arg robot_ip)"/>
