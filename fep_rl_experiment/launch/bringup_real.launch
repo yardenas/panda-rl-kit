@@ -1,18 +1,11 @@
 <launch>
 
-    <!-- Launch franka_control with robot_ip -->
+    <!-- Launch cartesian impedance example controller -->
     <arg name="robot_ip" default="172.16.1.11"/>
 
-    <include file="$(find franka_control)/launch/franka_control.launch">
+    <include file="$(find franka_example_controllers)/launch/cartesian_impedance_example_controller.launch">
         <arg name="robot_ip" value="$(arg robot_ip)"/>
     </include>
-
-    <!-- Override realtime config to ignore realtime requirements -->
-    <param name="/franka_control/realtime_config" value="ignore"/>
-
-    <!-- Load controller config and spawn controller -->
-    <rosparam command="load" file="$(find franka_example_controllers)/config/franka_example_controllers.yaml" subst_value="true"/>
-    <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" args="cartesian_impedance_example_controller"/>
     
     <include file="$(find realsense2_camera)/launch/rs_camera.launch">
         <arg name="camera" value="camera" />
